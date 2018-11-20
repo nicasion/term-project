@@ -63,6 +63,8 @@ import math
 
 def init(data):
     # load data.xyz as appropriate
+    
+    # main map
     height = 534
     width = 800
     data.mapX1 = 150
@@ -74,6 +76,7 @@ def init(data):
     data.mapX4 = data.mapX2
     data.mapY4 = data.mapY2 - height
     
+    # for the drawing of grids on the main map
     data.lst = []
     smallBoxHeight = height/22
     smallBoxWidth = width/22
@@ -91,16 +94,18 @@ def init(data):
             y4 = y2 - smallBoxHeight
             data.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
     
+    # other data to keep track of
     data.population = 0
     data.budget = 100000
-    data.click = False
     data.timer = 0
+    data.click = False
+    data.clickedLst = []
 
+
+    # images
     data.imagePower = PhotoImage(file="wind.png")
     data.imageWater = PhotoImage(file="water.png")
     data.imageTree = PhotoImage(file="tree.png")
-
-
 
 
 # returns true if clicked within boundaries of a specified grid (slanted)
@@ -142,12 +147,14 @@ def checkGridClick(clickX,clickY,gridCoordinates,data):
         if clickY < boundaryY: return False
         return True
 
+
 def mousePressed(event, data):
     # use event.x and event.y
     for grid in data.lst:
         if checkGridClick(event.x,event.y,grid,data):
             grid[8] = "Tree"
             data.click = True
+            data.clickedLst += [grid[9]]
 
 def keyPressed(event, data):
     # use event.char and event.keysym
@@ -164,10 +171,31 @@ def timerFired(data):
 
 def redrawAll(canvas, data):
     # draw in canvas
+    
+    # map
     canvas.create_polygon(data.mapX1,data.mapY1,data.mapX2,data.mapY2,data.mapX3,data.mapY3,data.mapX4,data.mapY4,fill="limegreen")
-    canvas.create_text(20,20,text="Population = %d"%(data.population),anchor=NW)
-    canvas.create_text(20,40,text="Budget = %d"%(data.budget),anchor=NW)
-    canvas.create_text(20,60,text="Click = %s"%(str(data.click)),anchor=NW)
+    
+    # text labels
+    canvas.create_text(800,20,text="Population = %d"%(data.population),anchor=NW)
+    canvas.create_text(800,40,text="Budget = %d"%(data.budget),anchor=NW)
+    canvas.create_text(800,60,text="Click = %s"%(str(data.click)),anchor=NW)
+    
+    # UI
+    canvas.create_rectangle(200,600,data.width,data.height,fill="lightgrey",outline='lightgrey')
+    
+    canvas.create_rectangle(0,0,100,data.height,fill='lightgrey',outline='lightgrey')
+    
+    canvas.create_rectangle(10,10,90,30,fill='white')
+    canvas.create_text(30,13,text="Power",anchor=NW)
+    
+    canvas.create_rectangle(10,40,90,60,fill='white')
+    canvas.create_text(30,43,text="Water",anchor=NW)
+    
+    canvas.create_rectangle(10,70,90,90,fill='white')
+    canvas.create_text(28,73,text="Nature",anchor=NW)
+    
+    canvas.create_rectangle(10,100,90,120,fill='white')
+    canvas.create_text(28,103,text="Zoning",anchor=NW)
 
 
 
@@ -182,13 +210,23 @@ def redrawAll(canvas, data):
             # color = smallBox[8]
 
         canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2,activefill="red")
-        if smallBox[8] == "Power":
-            canvas.create_image(smallBox[0],smallBox[1]+4,anchor=SW, image=data.imagePower)
-        elif smallBox[8] == "Water":
-            canvas.create_image(smallBox[0]+3,smallBox[1]+9,anchor=SW, image=data.imageWater)
-        elif smallBox[8] == "Tree":
-            canvas.create_image(smallBox[0]+7,smallBox[1]+2,anchor=SW, image=data.imageTree)
+        # if smallBox[8] == "Power":
+        #     canvas.create_image(smallBox[0],smallBox[1]+4,anchor=SW, image=data.imagePower)
+        # elif smallBox[8] == "Water":
+        #     canvas.create_image(smallBox[0]+3,smallBox[1]+9,anchor=SW, image=data.imageWater)
+        # elif smallBox[8] == "Tree":
+        #     canvas.create_image(smallBox[0]+7,smallBox[1]+2,anchor=SW, image=data.imageTree)
     
+    for clickedGrid in data.clickedLst:
+        j = clickedGrid[0]
+        i = clickedGrid[1]
+        number = j*22 + i
+        x1 = data.lst[number][0]
+        y1 = data.lst[number][1]
+        canvas.create_image(x1+7,y1+2,anchor=SW,image=data.imageTree)
+        
+        
+
 
 ####################################
 # use the run function as-is
