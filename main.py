@@ -18,6 +18,43 @@ import math
 # OOP
 ####################################
 
+# class WaterPlant(object):
+#     dotCount = 0
+# 
+#     # Model
+#     def __init__(self, x, y):
+#         Dot.dotCount += 1
+#         self.x = x
+#         self.y = y
+#         self.r = random.randint(20,50)
+#         self.fill = random.choice(["pink","orange","yellow","green",
+#                                    "cyan","purple"])
+#         self.clickCount = 0
+# 
+#     # View
+#     def draw(self, canvas):
+#         canvas.create_oval(self.x-self.r, self.y-self.r,
+#                            self.x+self.r, self.y+self.r,
+#                            fill=self.fill)
+#         canvas.create_text(self.x, self.y, text=str(self.clickCount))
+# 
+#     # Controller
+#     def containsPoint(self, x, y):
+#         d = ((self.x - x)**2 + (self.y - y)**2)**0.5
+#         return (d <= self.r)
+# 
+# class MovingDot(Dot):
+#     # Model
+#     def __init__(self, x, y):
+#         super().__init__(x, y)
+#         self.speed = 5 # default initial speed
+# 
+#     # Controller
+#     def move(self, data):
+#         self.x += self.speed
+#         if (self.x > data.width):
+#             self.x = 0    
+#     
 
 
 ####################################
@@ -52,14 +89,18 @@ def init(data):
             y3 = y1
             x4 = x2
             y4 = y2 - smallBoxHeight
-            data.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]    
+            data.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
     
     data.population = 0
     data.budget = 100000
     data.click = False
     data.timer = 0
 
-    data.image = PhotoImage(file="test3.png")
+    data.imagePower = PhotoImage(file="wind.png")
+    data.imageWater = PhotoImage(file="water.png")
+    data.imageTree = PhotoImage(file="tree.png")
+
+
 
 
 # returns true if clicked within boundaries of a specified grid (slanted)
@@ -105,7 +146,7 @@ def mousePressed(event, data):
     # use event.x and event.y
     for grid in data.lst:
         if checkGridClick(event.x,event.y,grid,data):
-            grid[8] = "blue"
+            grid[8] = "Tree"
             data.click = True
 
 def keyPressed(event, data):
@@ -134,10 +175,20 @@ def redrawAll(canvas, data):
     for smallBox in data.lst:
         if smallBox[8] == "None":
             color = "limegreen"
+        elif smallBox[8] == "Building":
+            color = 'grey'
         else:
-            color = smallBox[8]
+            color = 'limegreen'
+            # color = smallBox[8]
+
         canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2,activefill="red")
-    canvas.create_image(50,50,anchor=NW, image=data.image)
+        if smallBox[8] == "Power":
+            canvas.create_image(smallBox[0],smallBox[1]+4,anchor=SW, image=data.imagePower)
+        elif smallBox[8] == "Water":
+            canvas.create_image(smallBox[0]+3,smallBox[1]+9,anchor=SW, image=data.imageWater)
+        elif smallBox[8] == "Tree":
+            canvas.create_image(smallBox[0]+7,smallBox[1]+2,anchor=SW, image=data.imageTree)
+    
 
 ####################################
 # use the run function as-is
