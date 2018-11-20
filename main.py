@@ -100,6 +100,7 @@ def init(data):
     data.timer = 0
     data.click = False
     data.clickedLst = []
+    data.coordinatesUI = [(10,10,90,30),(10,40,90,60),(10,70,90,90),(10,100,90,120)]
 
 
     # images
@@ -147,14 +148,26 @@ def checkGridClick(clickX,clickY,gridCoordinates,data):
         if clickY < boundaryY: return False
         return True
 
+def checkButtonClick(clickX,clickY,buttonCoordinates,data):
+    if buttonCoordinates[0] <= clickX <= buttonCoordinates[2] and buttonCoordinates[1] <= clickY <= buttonCoordinates[3]:
+        return True
+    return False
 
 def mousePressed(event, data):
     # use event.x and event.y
+    
+    # check for grid
     for grid in data.lst:
         if checkGridClick(event.x,event.y,grid,data):
             grid[8] = "Tree"
             data.click = True
             data.clickedLst += [grid[9]]
+    
+    # check for buttons
+    for button in data.coordinatesUI:
+        if checkButtonClick(event.x,event.y,button,data):
+            data.click = "Button"
+            
 
 def keyPressed(event, data):
     # use event.char and event.keysym
@@ -185,16 +198,19 @@ def redrawAll(canvas, data):
     
     canvas.create_rectangle(0,0,100,data.height,fill='lightgrey',outline='lightgrey')
     
-    canvas.create_rectangle(10,10,90,30,fill='white')
+    for rectangle in data.coordinatesUI:
+        canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],rectangle[3],fill='white')
+        
+    # canvas.create_rectangle(10,10,90,30,fill='white')
     canvas.create_text(30,13,text="Power",anchor=NW)
     
-    canvas.create_rectangle(10,40,90,60,fill='white')
+    # canvas.create_rectangle(10,40,90,60,fill='white')
     canvas.create_text(30,43,text="Water",anchor=NW)
     
-    canvas.create_rectangle(10,70,90,90,fill='white')
+    # canvas.create_rectangle(10,70,90,90,fill='white')
     canvas.create_text(28,73,text="Nature",anchor=NW)
     
-    canvas.create_rectangle(10,100,90,120,fill='white')
+    # canvas.create_rectangle(10,100,90,120,fill='white')
     canvas.create_text(28,103,text="Zoning",anchor=NW)
 
 
