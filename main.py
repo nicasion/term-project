@@ -13,49 +13,11 @@
 from tkinter import *
 import math
 
-
 ####################################
 # OOP
 ####################################
 
-# class WaterPlant(object):
-#     dotCount = 0
-# 
-#     # Model
-#     def __init__(self, x, y):
-#         Dot.dotCount += 1
-#         self.x = x
-#         self.y = y
-#         self.r = random.randint(20,50)
-#         self.fill = random.choice(["pink","orange","yellow","green",
-#                                    "cyan","purple"])
-#         self.clickCount = 0
-# 
-#     # View
-#     def draw(self, canvas):
-#         canvas.create_oval(self.x-self.r, self.y-self.r,
-#                            self.x+self.r, self.y+self.r,
-#                            fill=self.fill)
-#         canvas.create_text(self.x, self.y, text=str(self.clickCount))
-# 
-#     # Controller
-#     def containsPoint(self, x, y):
-#         d = ((self.x - x)**2 + (self.y - y)**2)**0.5
-#         return (d <= self.r)
-# 
-# class MovingDot(Dot):
-#     # Model
-#     def __init__(self, x, y):
-#         super().__init__(x, y)
-#         self.speed = 5 # default initial speed
-# 
-#     # Controller
-#     def move(self, data):
-#         self.x += self.speed
-#         if (self.x > data.width):
-#             self.x = 0    
-#     
-
+# class 
 
 ####################################
 # core animation code
@@ -94,19 +56,19 @@ def init(data):
             y4 = y2 - smallBoxHeight
             data.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
     
+    # images
+    data.imagePower = PhotoImage(file="wind.png")
+    data.imageWater = PhotoImage(file="water.png")
+    data.imageTree = PhotoImage(file="tree.png")
+    
     # other data to keep track of
     data.population = 0
     data.budget = 100000
     data.timer = 0
     data.click = False
     data.clickedLst = []
-    data.coordinatesUI = [(10,10,90,30),(10,40,90,60),(10,70,90,90),(10,100,90,120)]
-
-
-    # images
-    data.imagePower = PhotoImage(file="wind.png")
-    data.imageWater = PhotoImage(file="water.png")
-    data.imageTree = PhotoImage(file="tree.png")
+    data.coordinatesUI = [(10,10,90,30,data.imagePower),(10,40,90,60,data.imageWater),(10,70,90,90,data.imageTree),(10,100,90,120,"Zoning")]
+    data.imageCurrent = None
 
 
 # returns true if clicked within boundaries of a specified grid (slanted)
@@ -160,13 +122,14 @@ def mousePressed(event, data):
     for grid in data.lst:
         if checkGridClick(event.x,event.y,grid,data):
             grid[8] = "Tree"
-            data.click = True
+            data.click = "Grid %s"%(str(grid[9]))
             data.clickedLst += [grid[9]]
     
     # check for buttons
     for button in data.coordinatesUI:
         if checkButtonClick(event.x,event.y,button,data):
             data.click = "Button"
+            data.imageCurrent = button[4]
             
 
 def keyPressed(event, data):
@@ -175,12 +138,7 @@ def keyPressed(event, data):
 
 def timerFired(data):
     data.timer += 1
-
     pass
-
-
-
-
 
 def redrawAll(canvas, data):
     # draw in canvas
@@ -194,44 +152,25 @@ def redrawAll(canvas, data):
     canvas.create_text(800,60,text="Click = %s"%(str(data.click)),anchor=NW)
     
     # UI
-    canvas.create_rectangle(200,600,data.width,data.height,fill="lightgrey",outline='lightgrey')
+    canvas.create_rectangle(0,650,data.width,data.height,fill="grey",outline='grey')
     
     canvas.create_rectangle(0,0,100,data.height,fill='lightgrey',outline='lightgrey')
     
     for rectangle in data.coordinatesUI:
-        canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],rectangle[3],fill='white')
+        canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],rectangle[3],fill='white',activefill="yellow")
         
-    # canvas.create_rectangle(10,10,90,30,fill='white')
     canvas.create_text(30,13,text="Power",anchor=NW)
-    
-    # canvas.create_rectangle(10,40,90,60,fill='white')
     canvas.create_text(30,43,text="Water",anchor=NW)
-    
-    # canvas.create_rectangle(10,70,90,90,fill='white')
     canvas.create_text(28,73,text="Nature",anchor=NW)
-    
-    # canvas.create_rectangle(10,100,90,120,fill='white')
     canvas.create_text(28,103,text="Zoning",anchor=NW)
-
-
-
 
     for smallBox in data.lst:
         if smallBox[8] == "None":
             color = "limegreen"
-        elif smallBox[8] == "Building":
-            color = 'grey'
         else:
-            color = 'limegreen'
-            # color = smallBox[8]
+            color = 'grey'
 
         canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2,activefill="red")
-        # if smallBox[8] == "Power":
-        #     canvas.create_image(smallBox[0],smallBox[1]+4,anchor=SW, image=data.imagePower)
-        # elif smallBox[8] == "Water":
-        #     canvas.create_image(smallBox[0]+3,smallBox[1]+9,anchor=SW, image=data.imageWater)
-        # elif smallBox[8] == "Tree":
-        #     canvas.create_image(smallBox[0]+7,smallBox[1]+2,anchor=SW, image=data.imageTree)
     
     for clickedGrid in data.clickedLst:
         j = clickedGrid[0]
@@ -239,10 +178,12 @@ def redrawAll(canvas, data):
         number = j*22 + i
         x1 = data.lst[number][0]
         y1 = data.lst[number][1]
-        canvas.create_image(x1+7,y1+2,anchor=SW,image=data.imageTree)
-        
-        
-
+        if data.imageCurrent == data.imagePower:
+            canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
+        elif data.imageCurrent == data.imageWater:
+            canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
+        elif data.imageCurrent == data.imageTree:
+            canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
 
 ####################################
 # use the run function as-is
