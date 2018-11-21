@@ -17,7 +17,7 @@ import math
 # OOP
 ####################################
 
-# class 
+# class to be implemented
 
 ####################################
 # core animation code
