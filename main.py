@@ -56,7 +56,15 @@ def init(data):
             y4 = y2 - smallBoxHeight
             data.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
     
+    # initialize grid contents
+    data.gridContent = []
+    for j in range(22):
+        data.gridContent += [[]]
+        for i in range(22):
+            data.gridContent[j] += [None]
+    
     # images
+    data.imageCurrent = None # holder for next image, intialize at None
     data.imagePower = PhotoImage(file="wind.png")
     data.imageWater = PhotoImage(file="water.png")
     data.imageTree = PhotoImage(file="tree.png")
@@ -68,7 +76,6 @@ def init(data):
     data.click = False
     data.clickedLst = []
     data.coordinatesUI = [(10,10,90,30,data.imagePower),(10,40,90,60,data.imageWater),(10,70,90,90,data.imageTree),(10,100,90,120,"Zoning")]
-    data.imageCurrent = None
 
 
 # returns true if clicked within boundaries of a specified grid (slanted)
@@ -110,6 +117,7 @@ def checkGridClick(clickX,clickY,gridCoordinates,data):
         if clickY < boundaryY: return False
         return True
 
+# to check if clicked on button
 def checkButtonClick(clickX,clickY,buttonCoordinates,data):
     if buttonCoordinates[0] <= clickX <= buttonCoordinates[2] and buttonCoordinates[1] <= clickY <= buttonCoordinates[3]:
         return True
@@ -118,22 +126,28 @@ def checkButtonClick(clickX,clickY,buttonCoordinates,data):
 def mousePressed(event, data):
     # use event.x and event.y
     
-    # check for grid
-    for grid in data.lst:
-        if checkGridClick(event.x,event.y,grid,data):
-            grid[8] = "Tree"
-            data.click = "Grid %s"%(str(grid[9]))
-            data.clickedLst += [grid[9]]
-    
-    # check for buttons
+    # check for button click
     for button in data.coordinatesUI:
         if checkButtonClick(event.x,event.y,button,data):
             data.click = "Button"
             data.imageCurrent = button[4]
             
+    
+    if data.imageCurrent != None:
+        # check for grid
+        for grid in data.lst:
+            if checkGridClick(event.x,event.y,grid,data):
+                data.click = "Grid %s"%(str(grid[9]))
+                data.gridContent[grid[9][0]][grid[9][1]] = data.imageCurrent
+                # data.clickedLst += [grid[9]]
+                data.imageCurrent = None
+        
+
 
 def keyPressed(event, data):
     # use event.char and event.keysym
+    if event.keysym == "Up":
+        print (data.gridContent)
     pass
 
 def timerFired(data):
@@ -163,27 +177,43 @@ def redrawAll(canvas, data):
     canvas.create_text(30,43,text="Water",anchor=NW)
     canvas.create_text(28,73,text="Nature",anchor=NW)
     canvas.create_text(28,103,text="Zoning",anchor=NW)
-
+    
+    # draw borders of grids
     for smallBox in data.lst:
         if smallBox[8] == "None":
             color = "limegreen"
         else:
             color = 'grey'
-
         canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2,activefill="red")
     
-    for clickedGrid in data.clickedLst:
-        j = clickedGrid[0]
-        i = clickedGrid[1]
-        number = j*22 + i
-        x1 = data.lst[number][0]
-        y1 = data.lst[number][1]
-        if data.imageCurrent == data.imagePower:
-            canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
-        elif data.imageCurrent == data.imageWater:
-            canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
-        elif data.imageCurrent == data.imageTree:
-            canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
+   
+    # for clickedGrid in data.clickedLst:
+    #     j = clickedGrid[0]
+    #     i = clickedGrid[1]
+    #     number = j*22 + i
+    #     x1 = data.lst[number][0]
+    #     y1 = data.lst[number][1]
+    #     if data.imageCurrent == data.imagePower:
+    #         canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
+    #     elif data.imageCurrent == data.imageWater:
+    #         canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
+    #     elif data.imageCurrent == data.imageTree:
+    #         canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
+            
+    # to draw out objects for grid content
+    for row in range(len(data.gridContent)):
+        for col in range(len(data.gridContent[row])):
+            currentGrid = data.gridContent[row][col]
+            x1 = data.lst[row*22+col][0]
+            y1 = data.lst[row*22+col][1]
+            if currentGrid == None: pass
+            elif currentGrid == data.imagePower:
+                canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
+            elif currentGrid == data.imageWater:
+                canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
+            elif currentGrid == data.imageTree:
+                canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
+
 
 ####################################
 # use the run function as-is
