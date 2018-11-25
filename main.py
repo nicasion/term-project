@@ -11,6 +11,7 @@
 # http://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
 
 from tkinter import *
+import pyautogui
 import math
 
 ####################################
@@ -40,20 +41,20 @@ def init(data):
     
     # for the drawing of grids on the main map
     data.lst = []
-    smallBoxHeight = height/22
-    smallBoxWidth = width/22
+    data.smallBoxHeight = height/22
+    data.smallBoxWidth = width/22
     for j in range(22):
-        startX1 = data.mapX1 + j*smallBoxWidth/2
-        startY1 = data.mapY1 + j*smallBoxHeight/2
+        startX1 = data.mapX1 + j*data.smallBoxWidth/2
+        startY1 = data.mapY1 + j*data.smallBoxHeight/2
         for i in range(22):
-            x1 = startX1 + i*smallBoxWidth/2
-            y1 = startY1 - i*smallBoxHeight/2
-            x2 = x1 + smallBoxWidth/2
-            y2 = y1 + smallBoxHeight/2
-            x3 = x1 + (smallBoxWidth)
+            x1 = startX1 + i*data.smallBoxWidth/2
+            y1 = startY1 - i*data.smallBoxHeight/2
+            x2 = x1 + data.smallBoxWidth/2
+            y2 = y1 + data.smallBoxHeight/2
+            x3 = x1 + (data.smallBoxWidth)
             y3 = y1
             x4 = x2
-            y4 = y2 - smallBoxHeight
+            y4 = y2 - data.smallBoxHeight
             data.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
     
     # initialize grid contents
@@ -76,6 +77,7 @@ def init(data):
     data.click = False
     data.clickedLst = []
     data.coordinatesUI = [(10,10,90,30,data.imagePower),(10,40,90,60,data.imageWater),(10,70,90,90,data.imageTree),(10,100,90,120,"Zoning")]
+
 
 
 # returns true if clicked within boundaries of a specified grid (slanted)
@@ -141,7 +143,6 @@ def mousePressed(event, data):
                 data.gridContent[grid[9][0]][grid[9][1]] = data.imageCurrent
                 # data.clickedLst += [grid[9]]
                 data.imageCurrent = None
-        
 
 
 def keyPressed(event, data):
@@ -151,6 +152,7 @@ def keyPressed(event, data):
     pass
 
 def timerFired(data):
+    data.mouseX, data.mouseY = pyautogui.position()
     data.timer += 1
     pass
 
@@ -158,13 +160,13 @@ def redrawAll(canvas, data):
     # draw in canvas
     
     # map
-    canvas.create_polygon(data.mapX1,data.mapY1,data.mapX2,data.mapY2,data.mapX3,data.mapY3,data.mapX4,data.mapY4,fill="limegreen")
+    canvas.create_polygon(data.mapX1,data.mapY1,data.mapX2,data.mapY2,data.mapX3,data.mapY3,data.mapX4,data.mapY4,fill="forestgreen")
     
     # text labels
     canvas.create_text(800,20,text="Population = %d"%(data.population),anchor=NW)
     canvas.create_text(800,40,text="Budget = %d"%(data.budget),anchor=NW)
     canvas.create_text(800,60,text="Click = %s"%(str(data.click)),anchor=NW)
-    
+        
     # UI
     canvas.create_rectangle(0,650,data.width,data.height,fill="grey",outline='grey')
     
@@ -181,24 +183,19 @@ def redrawAll(canvas, data):
     # draw borders of grids
     for smallBox in data.lst:
         if smallBox[8] == "None":
-            color = "limegreen"
+            color = "forestgreen"
         else:
             color = 'grey'
-        canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2,activefill="red")
+        canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2)
     
-   
-    # for clickedGrid in data.clickedLst:
-    #     j = clickedGrid[0]
-    #     i = clickedGrid[1]
-    #     number = j*22 + i
-    #     x1 = data.lst[number][0]
-    #     y1 = data.lst[number][1]
-    #     if data.imageCurrent == data.imagePower:
-    #         canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
-    #     elif data.imageCurrent == data.imageWater:
-    #         canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
-    #     elif data.imageCurrent == data.imageTree:
-    #         canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
+    def drawImageCalibrated(input): # need to use x1, y1
+        if input == None: pass
+        elif input == data.imagePower:
+            canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
+        elif input == data.imageWater:
+            canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
+        elif input == data.imageTree:
+            canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
             
     # to draw out objects for grid content
     for row in range(len(data.gridContent)):
@@ -206,13 +203,20 @@ def redrawAll(canvas, data):
             currentGrid = data.gridContent[row][col]
             x1 = data.lst[row*22+col][0]
             y1 = data.lst[row*22+col][1]
-            if currentGrid == None: pass
-            elif currentGrid == data.imagePower:
-                canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
-            elif currentGrid == data.imageWater:
-                canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
-            elif currentGrid == data.imageTree:
-                canvas.create_image(x1+7,y1+2,anchor=SW, image=data.imageTree)
+            drawImageCalibrated(currentGrid) # need to use x1, y1   
+    
+    # follows mouse movement
+    if data.imageCurrent != None:
+        x1 = data.mouseX-6 - data.smallBoxWidth/2
+        y1 = data.mouseY-51 
+        x2 = x1 + data.smallBoxWidth/2
+        y2 = y1 + data.smallBoxHeight/2
+        x3 = x1 + data.smallBoxWidth
+        y3 = y1
+        x4 = x2
+        y4 = y2 - data.smallBoxHeight
+        canvas.create_polygon(x1,y1,x2,y2,x3,y3,x4,y4,fill="orange")
+        drawImageCalibrated(data.imageCurrent) # need to use x1, y1
 
 
 ####################################
@@ -246,7 +250,7 @@ def run(width=300, height=300):
     data = Struct()
     data.width = width
     data.height = height
-    data.timerDelay = 100 # milliseconds
+    data.timerDelay = 1 # milliseconds
     root = Tk()
     root.resizable(width=False, height=False) # prevents resizing window
     init(data)
@@ -261,6 +265,7 @@ def run(width=300, height=300):
                             keyPressedWrapper(event, canvas, data))
     timerFiredWrapper(canvas, data)
     # and launch the app
+    
     root.mainloop()  # blocks until window is closed
     print("bye!")
 
