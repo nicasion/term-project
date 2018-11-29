@@ -18,7 +18,7 @@ class Map(object):
         self.height = 534
         self.width = 800
         self.mapX1 = 150
-        self.mapY1 = self.height/2 + 20
+        self.mapY1 = self.height/2 + 50
         self.mapX2 = self.mapX1 + self.width/2
         self.mapY2 = self.mapY1 + self.height/2
         self.mapX3 = self.mapX1 + self.width
@@ -102,7 +102,10 @@ class Map(object):
                 self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]] = imageCurrent
                 # get coordinates of matching grid
                 # replace data as imageCurrent
-    
+                
+                return True
+        return False
+
     def draw(self,canvas):        
         # map
         canvas.create_polygon(self.mapX1,self.mapY1,self.mapX2,self.mapY2,
@@ -125,6 +128,14 @@ class Map(object):
                 canvas.create_image(x1+3,y1+9,anchor=SW, image=self.imageWater)
             elif input == "imageTree":
                 canvas.create_image(x1+7,y1+2,anchor=SW, image=self.imageTree)
+            elif input == 'zoning':
+                x2 = x1 + self.smallBoxWidth/2
+                y2 = y1 + self.smallBoxHeight/2
+                x3 = x1 + (self.smallBoxWidth)
+                y3 = y1
+                x4 = x2
+                y4 = y2 - self.smallBoxHeight
+                canvas.create_polygon(x1,y1,x2,y2,x3,y3,x4,y4,fill='red')
                 
         # to draw out objects for grid content
         for row in range(len(self.gridContent)):
