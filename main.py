@@ -13,7 +13,7 @@
 from tkinter import *
 import pyautogui
 import math
-
+import random
 import PIL
 
 from Map import Map
@@ -33,8 +33,9 @@ def init(data):
     data.smallBoxHeight = 534/22
     
     # images
-    data.imageLogo = PhotoImage(file="title.png")
     data.imageCurrent = None # holder for next image, intialize at None
+
+    data.imageLogo = PhotoImage(file="title.png")
     data.imagePower = PhotoImage(file="wind.png")
     data.imageWater = PhotoImage(file="water.png")
     data.imageTree = PhotoImage(file="tree.png")
@@ -42,34 +43,34 @@ def init(data):
     data.imageClose = PhotoImage(file="close.png")
     data.imageGraph = PhotoImage(file="graph2.png")
     
-
-    
-    # other data to keep track of
+    # General game data to keep track of
     data.population = 0
     data.budget = 10000
     data.timer = 0
-    data.click = False
-    data.clickedLst = []
     data.calendar = 1
-    data.temporaryValue = False
+    data.monthlyExpense = 0
+    data.monthlyIncome = 0
     
-    # UI coordinates
-    data.coordinatesStart = [(data.width/2-100,data.height/2,data.width/2+100,data.height/2+50)]
-    data.coordinatesUI = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree"),(10,100,90,120,"zoning")]
-    data.coordinatesNonBuild = [(120,660,200,680,'budget'),(220,660,340,680,'monthlyExpense')]
-    data.menuBg = {'budget':(120,450,400,650),'monthlyExpense':(220,450,500,650)}
-    data.menuCurrent = None
-    data.currentButton = None
+    data.temporaryValue = False # refreshes at timerFired
     
     # Specific Data
     data.constructionCost = {'imagePower':100,'imageWater':50,'imageTree':20, 'zoning':0}
     data.monthlyCost = {'imagePower':10,'imageWater':5,'imageTree':2,'zoning':0}
     
-    data.monthlyExpense = 0
-    data.monthlyIncome = 0
     
     # sequence in dictionary[key] = budget,monthlyExpense,population
     data.snapshot = {1:[10000,0,0]}
+    
+    
+    # UI coordinates (start screen)
+    data.coordinatesStart = [(data.width/2-100,data.height/2,data.width/2+100,data.height/2+50)]
+    
+    # UI coordinates (play game)
+    data.coordinatesUI = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree"),(10,100,90,120,"zoning")]
+    data.coordinatesNonBuild = [(120,660,200,680,'budget'),(220,660,340,680,'monthlyExpense')]
+    data.menuBg = {'budget':(120,450,400,650),'monthlyExpense':(220,450,500,650)}
+    data.menuCurrent = None
+    data.currentButton = None
     
 
 # to check if clicked on button (for UI)
