@@ -14,6 +14,8 @@ from tkinter import *
 import pyautogui
 import math
 
+import PIL
+
 from Map import Map
 
 ####################################
@@ -39,6 +41,7 @@ def init(data):
     data.imageConstruction = PhotoImage(file='construction3.png')
     data.imageClose = PhotoImage(file="close.png")
     data.imageGraph = PhotoImage(file="graph2.png")
+    
 
     
     # other data to keep track of
@@ -83,31 +86,34 @@ def mousePressed(event, data):
                 data.gameState = 'play'
     
     elif data.gameState == "play":
-        # check for button click
+        # check for button click (build menu)
         for button in data.coordinatesUI:
             if checkButtonClick(event.x,event.y,button,data):
+                # if button is clicked, store button info in imagecurrent
                 data.imageCurrent = button[4]
         
+        # check for button click (non-build menu)
         for button in data.coordinatesNonBuild:
             if checkButtonClick(event.x,event.y,button,data):
                 data.imageCurrent = None
+                # if button is clicked, store button info in currentbutton
                 data.currentButton = button[4]
                 data.menuCurrent = data.menuBg[data.currentButton]
         
+        # checks if 'close' button in menu option is clicked = close menu
         if data.menuCurrent != None:
             if checkButtonClick(event.x,event.y,(data.menuCurrent[2]-12,data.menuCurrent[1]+2,data.menuCurrent[2]-2,data.menuCurrent[1]+14),data):
                 data.menuCurrent = None
 
 
-        # check for grid click
+        # check for grid click only if there is an existing imagecurrent
         if data.imageCurrent != None:
             data.temporaryValue = data.map.mousePressAction(event.x,event.y,data.imageCurrent)
             if data.temporaryValue == True:
                 cost = data.constructionCost[data.imageCurrent]
                 data.budget -= cost
                 data.monthlyExpense += data.monthlyCost[data.imageCurrent]
-                
-            # data.imageCurrent = None
+
 
 def keyPressed(event, data):
     # use event.char and event.keysym
@@ -115,6 +121,8 @@ def keyPressed(event, data):
         print (data.map.gridContent)
     if event.keysym == "Down":
         print (data.snapshot)
+    if event.keysym == 'Left':
+        print (data.map.lstGridCoordinates)
     pass
 
 def timerFired(data):
@@ -128,46 +136,54 @@ def timerFired(data):
             data.snapshot[data.calendar] = [data.budget,data.monthlyExpense,data.population]
 
 def redrawAll(canvas, data):
+    # for start screen
     if data.gameState == 'startscreen':
         canvas.create_image(data.width/6,data.height/4,anchor=NW, image=data.imageLogo)
         canvas.create_rectangle(data.width/2-100,data.height/2,data.width/2+100,data.height/2+50,fill="yellow")
         canvas.create_text(data.width/2-50,data.height/2+13,text="Start Game",anchor=NW,font="Arial 20")
     
+    # for actual gameplay
     if data.gameState == "play":
-        # draw in canvas
-        data.map.draw(canvas)
+        data.map.draw(canvas) # draws the map... from Map.py
         
-        canvas.create_rectangle(790,15,860,40,fill="white") 
-        
-        # text labels
-        canvas.create_text(790,70,text="Population = %d"%(data.population),anchor=NW)
-        canvas.create_text(790,50,text="Budget = %d"%(data.budget),anchor=NW)
-        canvas.create_text(790,90,text="Monthly Expense = %d"%(data.monthlyExpense),anchor=NW)
-
+        # UI (right corner)
+        canvas.create_rectangle(790,15,860,40,fill="white") # box for 'day'
         canvas.create_text(800,20,text="Day %s"%(str(data.calendar)),anchor=NW)
+        canvas.create_text(790,50,text="Budget = %d"%(data.budget),anchor=NW)
+        canvas.create_text(790,70,text="Population = %d"%(data.population),anchor=NW)
+        canvas.create_text(790,90,text="Monthly Expense = %d"%(data.monthlyExpense),anchor=NW)
             
-        # UI
-        canvas.create_rectangle(0,650,data.width,data.height,fill="grey",
-            outline='grey')
+        # UI (build menu)
         canvas.create_rectangle(0,0,100,data.height,fill='lightgrey',
             outline='lightgrey')
-        
         for rectangle in data.coordinatesUI:
             canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],
                 rectangle[3],fill='white')
+        canvas.create_text(30,13,text="Power",anchor=NW)
+        canvas.create_text(30,43,text="Water",anchor=NW)
+        canvas.create_text(28,73,text="Nature",anchor=NW)
+        canvas.create_text(28,103,text="Zoning",anchor=NW)
+        
+
+            
+        # UI (stats menu)
+        canvas.create_rectangle(0,650,data.width,data.height,fill="grey",
+            outline='grey')
         for rectangle in data.coordinatesNonBuild:
             canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],
                 rectangle[3],fill='white')
+                
+        canvas.create_text(137,663,text="Budget",anchor=NW)
+        canvas.create_text(227,663,text="Monthly Expense",anchor=NW)
         
-        # menu BG
+        # menu BG for stats menu
         if data.menuCurrent != None:
             canvas.create_rectangle(data.menuCurrent[0],data.menuCurrent[1],data.menuCurrent[2],data.menuCurrent[3],fill="lightgrey")
             canvas.create_image(data.menuCurrent[2]-2,data.menuCurrent[1]+2,anchor=NE, image=data.imageClose)
             canvas.create_image(data.menuCurrent[2]-19,data.menuCurrent[1]+8,anchor=NE, image=data.imageGraph)
             canvas.create_text(data.menuCurrent[0]+34,data.menuCurrent[1]+4,text=data.currentButton,anchor=NW)
             canvas.create_text(data.menuCurrent[2]-44,data.menuCurrent[3],text="time",anchor=SE)
-
-                        
+            # retrieving from snapshot values, assign position for retrieval
             if data.currentButton == "budget": pos = 0
             elif data.currentButton == "monthlyExpense": pos = 1
             elif data.currentButton == "population": pos = 2
@@ -188,20 +204,10 @@ def redrawAll(canvas, data):
                 xPos = x*horizontalSpacing + 32 + data.menuCurrent[0]
                 yPos = (maxValue - y)*verticalSpacing + 20 + data.menuCurrent[1]
                 canvas.create_oval(xPos,yPos,xPos+5,yPos+5,fill='black')
-                
-                    
-            
-        canvas.create_text(30,13,text="Power",anchor=NW)
-        canvas.create_text(30,43,text="Water",anchor=NW)
-        canvas.create_text(28,73,text="Nature",anchor=NW)
-        canvas.create_text(28,103,text="Zoning",anchor=NW)
-        
-        canvas.create_text(137,663,text="Budget",anchor=NW)
-        canvas.create_text(227,663,text="Monthly Expense",anchor=NW)
 
 
-        
-        # hardcoded adjustments for specific images
+        # hardcoded adjustments for specific images for following of mouse movement
+        # this must be also updated along with the one stored in Map.py
         def drawImageCalibrated(input,x1,y1): 
             if input == None: pass
             elif input == "imagePower":

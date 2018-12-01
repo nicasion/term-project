@@ -27,10 +27,11 @@ class Map(object):
         self.mapY4 = self.mapY2 - self.height
         
         # for the drawing of grids on the main map
-        self.lst = []
+        self.lstGridCoordinates = []
         self.smallBoxHeight = self.height/22
         self.smallBoxWidth = self.width/22
         for j in range(22):
+            self.lstGridCoordinates += [[]]
             startX1 = self.mapX1 + j*self.smallBoxWidth/2
             startY1 = self.mapY1 + j*self.smallBoxHeight/2
             for i in range(22):
@@ -42,14 +43,14 @@ class Map(object):
                 y3 = y1
                 x4 = x2
                 y4 = y2 - self.smallBoxHeight
-                self.lst += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
+                self.lstGridCoordinates[j] += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
         
         # initialize grid contents to be None
         self.gridContent = []
         for j in range(22):
             self.gridContent += [[]]
             for i in range(22):
-                self.gridContent[j] += [None]
+                self.gridContent[j] += [[None]] 
         
         # images
         self.imagePower = PhotoImage(file="wind.png")
@@ -97,13 +98,15 @@ class Map(object):
     
     # to call from mouse pressed in main game file 
     def mousePressAction(self,clickX,clickY,imageCurrent):
-        for gridCoordinates in self.lst:
-            if Map.checkGridClick(clickX,clickY,gridCoordinates):
-                self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]] = imageCurrent
-                # get coordinates of matching grid
-                # replace data as imageCurrent
-                
-                return True
+        for row in range(len(self.lstGridCoordinates)):
+            for col in range(len(self.lstGridCoordinates[row])):
+                gridCoordinates = self.lstGridCoordinates[row][col]
+                if Map.checkGridClick(clickX,clickY,gridCoordinates):
+                    self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]] = imageCurrent
+                    # get coordinates of matching grid
+                    # replace data as imageCurrent
+                    
+                    return True
         return False
 
     def draw(self,canvas):        
@@ -112,12 +115,15 @@ class Map(object):
             self.mapX3,self.mapY3,self.mapX4,self.mapY4,fill="forestgreen")
         
         # draw borders of grids
-        for smallBox in self.lst:
-            if smallBox[8] == "None":
-                color = "forestgreen"
-            else:
-                color = smallBox[8]
-            canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2)
+        for row in range(len(self.lstGridCoordinates)):
+            for col in range(len(self.lstGridCoordinates[row])):
+                smallBox = self.lstGridCoordinates[row][col]
+                if smallBox[8] == "None":
+                    color = "forestgreen"
+                else:
+                    color = smallBox[8]
+                canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2)
+            
         
         # hardcoded adjustments for specific images
         def drawImageCalibrated(input,x1,y1):
@@ -141,6 +147,6 @@ class Map(object):
         for row in range(len(self.gridContent)):
             for col in range(len(self.gridContent[row])):
                 currentGrid = self.gridContent[row][col]
-                x1 = self.lst[row*22+col][0]
-                y1 = self.lst[row*22+col][1]
+                x1 = self.lstGridCoordinates[row][col][0]
+                y1 = self.lstGridCoordinates[row][col][1]
                 drawImageCalibrated(currentGrid,x1,y1)
