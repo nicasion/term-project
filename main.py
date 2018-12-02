@@ -65,10 +65,42 @@ def init(data):
     # UI coordinates (start screen)
     data.coordinatesStart = [(data.width/2-100,data.height/2,data.width/2+100,data.height/2+50)]
     
-    # UI coordinates (play game)
-    data.coordinatesUI = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree"),(10,100,90,120,"zoning")]
-    data.coordinatesNonBuild = [(120,660,200,680,'budget'),(220,660,340,680,'monthlyExpense')]
-    data.menuBg = {'budget':(120,450,400,650),'monthlyExpense':(220,450,500,650)}
+    # UI coordinates (play game): Build,NonBuild,Stats (BUTTONS)
+    data.coordinatesBuild = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree")]
+    
+    # MAIN ADD AREA!!!
+    data.coordinatesNonBuild = [(10,100,90,120,"zoning",200,3,None,"limegreen","Residential","imageTree",'lightblue','Commerical',None,'yellow','Industrial')]
+    # 5th pos = length, 6th pos = count of object, 7th = "imagefile", 8th = color of layer, 9th = text, 10th = repeat 7th for next set...
+    data.coordinatesStats = [(120,660,200,680,'budget'),(220,660,340,680,'monthlyExpense')]
+        
+    # Coordinates for Menu
+    data.menuBgAbove = {}
+    for coordinate in data.coordinatesStats:
+        key = coordinate[4]
+        data.menuBgAbove[key] = (coordinate[0],450,coordinate[0]+280,450+200)
+    
+    data.menuBgSide = {}
+    for coordinate in data.coordinatesNonBuild:
+        key = coordinate[4]
+        data.menuBgSide[key] = (110,coordinate[1]-coordinate[5]/2,110+200,coordinate[1]+coordinate[5]/2,coordinate[6])
+        cycle = int((len(coordinate) - 7)/3)
+        for i in range(cycle):
+            data.menuBgSide[key] += (coordinate[7+(i*3)],coordinate[8+(i*3)],coordinate[9+(i*3)])
+
+    # update menuOptionChecker!!! based on data in non-build)
+    data.menuOptionChecker = {}
+    for key in data.menuBgSide.keys():
+        count = data.menuBgSide[key][4]
+        for num in range(count):
+            rx1 = data.menuBgSide[key][0]+15
+            ry1 = data.menuBgSide[key][1]+15+(num*(15+50))
+            rx2 = data.menuBgSide[key][0]+15+50
+            ry2 = data.menuBgSide[key][1]+(num+1)*(15+50)
+            if key in data.menuOptionChecker.keys():
+                data.menuOptionChecker[key] += [(rx1,ry1,rx2,ry2,data.menuBgSide[key][5+(num*3)])]
+            else:
+                data.menuOptionChecker[key] = [(rx1,ry1,rx2,ry2,data.menuBgSide[key][5+(num*3)])]
+    
     data.menuCurrent = None
     data.currentButton = None
     
@@ -80,6 +112,7 @@ def checkButtonClick(clickX,clickY,buttonCoordinates,data):
         return True
     return False
 
+# MOUSE
 def mousePressed(event, data):
     if data.gameState == "startscreen":
         for button in data.coordinatesStart:
@@ -88,24 +121,41 @@ def mousePressed(event, data):
     
     elif data.gameState == "play":
         # check for button click (build menu)
-        for button in data.coordinatesUI:
+        for button in data.coordinatesBuild:
             if checkButtonClick(event.x,event.y,button,data):
                 # if button is clicked, store button info in imagecurrent
                 data.imageCurrent = button[4]
-        
+    
         # check for button click (non-build menu)
         for button in data.coordinatesNonBuild:
             if checkButtonClick(event.x,event.y,button,data):
                 data.imageCurrent = None
                 # if button is clicked, store button info in currentbutton
                 data.currentButton = button[4]
-                data.menuCurrent = data.menuBg[data.currentButton]
+                data.menuCurrent = data.menuBgSide[button[4]]
+
+        # check for button click (stats menu)
+        for button in data.coordinatesStats:
+            if checkButtonClick(event.x,event.y,button,data):
+                data.imageCurrent = None
+                # if button is clicked, store button info in currentbutton
+                data.currentButton = button[4]
+                data.menuCurrent = data.menuBgAbove[button[4]]
         
-        # checks if 'close' button in menu option is clicked = close menu
         if data.menuCurrent != None:
+            # check for clicks on menu options only when specific menu is open
+            # for build menu only (not for stat)
+            if data.currentButton in data.menuOptionChecker.keys():
+                for coordinate in data.menuOptionChecker[data.currentButton]:
+                    if checkButtonClick(event.x,event.y,coordinate,data):
+                        data.imageCurrent = coordinate[4]
+            
+            # checks if 'close' button in menu option is clicked = close menu
             if checkButtonClick(event.x,event.y,(data.menuCurrent[2]-12,data.menuCurrent[1]+2,data.menuCurrent[2]-2,data.menuCurrent[1]+14),data):
                 data.menuCurrent = None
-
+                data.currentButton = None
+            
+            
 
         # check for grid click only if there is an existing imagecurrent
         if data.imageCurrent != None:
@@ -123,8 +173,10 @@ def keyPressed(event, data):
     if event.keysym == "Down":
         print (data.snapshot)
     if event.keysym == 'Left':
-        print (data.map.lstGridCoordinates)
+        print (data.currentButton)
     pass
+
+
 
 def timerFired(data):
     if data.gameState == 'play':
@@ -135,6 +187,8 @@ def timerFired(data):
             data.calendar += 1
             data.budget -= data.monthlyExpense
             data.snapshot[data.calendar] = [data.budget,data.monthlyExpense,data.population]
+
+
 
 def redrawAll(canvas, data):
     # for start screen
@@ -157,56 +211,34 @@ def redrawAll(canvas, data):
         # UI (build menu)
         canvas.create_rectangle(0,0,100,data.height,fill='lightgrey',
             outline='lightgrey')
-        for rectangle in data.coordinatesUI:
+        for rectangle in data.coordinatesBuild:
             canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],
                 rectangle[3],fill='white')
         canvas.create_text(30,13,text="Power",anchor=NW)
         canvas.create_text(30,43,text="Water",anchor=NW)
         canvas.create_text(28,73,text="Nature",anchor=NW)
-        canvas.create_text(28,103,text="Zoning",anchor=NW)
         
-
-            
-        # UI (stats menu)
-        canvas.create_rectangle(0,650,data.width,data.height,fill="grey",
-            outline='grey')
+        # UI (non-build menu)
         for rectangle in data.coordinatesNonBuild:
             canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],
                 rectangle[3],fill='white')
-                
+        canvas.create_text(28,103,text="Zoning",anchor=NW)
+
+    
+        # UI (stats/non-build menu)
+        canvas.create_rectangle(0,650,data.width,data.height,fill="grey",
+            outline='grey')
+        for rectangle in data.coordinatesStats:
+            canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],
+                rectangle[3],fill='white')
+        
+        
         canvas.create_text(137,663,text="Budget",anchor=NW)
         canvas.create_text(227,663,text="Monthly Expense",anchor=NW)
         
-        # menu BG for stats menu
-        if data.menuCurrent != None:
-            canvas.create_rectangle(data.menuCurrent[0],data.menuCurrent[1],data.menuCurrent[2],data.menuCurrent[3],fill="lightgrey")
-            canvas.create_image(data.menuCurrent[2]-2,data.menuCurrent[1]+2,anchor=NE, image=data.imageClose)
-            canvas.create_image(data.menuCurrent[2]-19,data.menuCurrent[1]+8,anchor=NE, image=data.imageGraph)
-            canvas.create_text(data.menuCurrent[0]+34,data.menuCurrent[1]+4,text=data.currentButton,anchor=NW)
-            canvas.create_text(data.menuCurrent[2]-44,data.menuCurrent[3],text="time",anchor=SE)
-            # retrieving from snapshot values, assign position for retrieval
-            if data.currentButton == "budget": pos = 0
-            elif data.currentButton == "monthlyExpense": pos = 1
-            elif data.currentButton == "population": pos = 2
-            
-            # plot graph
-            plotGraphData = []
-            for dataPoint in data.snapshot.values():
-                plotGraphData += [dataPoint[pos]]
-            maxValue = max(plotGraphData)
-            minValue = min(plotGraphData)
-            dataCount = len(plotGraphData)
-            difference = maxValue - minValue
-            horizontalSpacing = (data.menuCurrent[2]-data.menuCurrent[0]-28)/dataCount
-            if difference == 0: difference = 1
-            verticalSpacing = (data.menuCurrent[3]-data.menuCurrent[1]-48)/difference
-            for x in range(len(plotGraphData)):
-                y = plotGraphData[x]
-                xPos = x*horizontalSpacing + 32 + data.menuCurrent[0]
-                yPos = (maxValue - y)*verticalSpacing + 20 + data.menuCurrent[1]
-                canvas.create_oval(xPos,yPos,xPos+5,yPos+5,fill='black')
-
-
+        
+        
+        
         # hardcoded adjustments for specific images for following of mouse movement
         # this must be also updated along with the one stored in Map.py
         def drawImageCalibrated(input,x1,y1): 
@@ -234,6 +266,67 @@ def redrawAll(canvas, data):
                 y4 = y2 - data.smallBoxHeight
                 canvas.create_polygon(x1,y1,x2,y2,x3,y3,x4,y4,fill="orange")
                 drawImageCalibrated(data.imageCurrent,x1,y1)
+
+        
+        # menu BG
+        if data.menuCurrent != None:
+            canvas.create_rectangle(data.menuCurrent[0],data.menuCurrent[1],data.menuCurrent[2],data.menuCurrent[3],fill="lightgrey")
+            canvas.create_image(data.menuCurrent[2]-
+2,data.menuCurrent[1]+2,anchor=NE, image=data.imageClose)
+            # menu BG for non-build
+            if data.currentButton in data.menuBgSide.keys():
+                count = data.menuCurrent[4]
+                for num in range(count):
+                    rx1 = data.menuCurrent[0]+15
+                    ry1 = data.menuCurrent[1]+15+(num*(15+50))
+                    rx2 = data.menuCurrent[0]+15+50
+                    ry2 = data.menuCurrent[1]+(num+1)*(15+50)
+                    canvas.create_rectangle(rx1,ry1,rx2,ry2,fill='white')
+                    
+                    x1 = data.menuCurrent[0]+22
+                    y1 = data.menuCurrent[1]+50+(num*(15+50))
+                    x2 = x1 + data.smallBoxWidth/2
+                    y2 = y1 + data.smallBoxHeight/2
+                    x3 = x1 + data.smallBoxWidth
+                    y3 = y1
+                    x4 = x2
+                    y4 = y2 - data.smallBoxHeight
+                    canvas.create_polygon(x1,y1,x2,y2,x3,y3,x4,y4,fill=data.menuCurrent[6+(num*3)])
+                    if data.menuCurrent[5+(num*3)] != None:
+                        drawImageCalibrated(data.menuCurrent[5+(num*3)],x1,y1)
+                    canvas.create_text((rx2+data.menuCurrent[2])/2,ry1,text=data.menuCurrent[7+(num*3)],anchor=N)
+
+
+            # menu BG for stats
+            if data.currentButton in data.menuBgAbove.keys():
+                canvas.create_image(data.menuCurrent[2]-19,data.menuCurrent[1]+8,anchor=NE, image=data.imageGraph)
+                canvas.create_text(data.menuCurrent[0]+34,data.menuCurrent[1]+4,text=data.currentButton,anchor=NW)
+                canvas.create_text(data.menuCurrent[2]-44,data.menuCurrent[3],text="time",anchor=SE)
+            
+            
+                # retrieving from snapshot values, assign position for retrieval
+                if data.currentButton == "budget": pos = 0
+                elif data.currentButton == "monthlyExpense": pos = 1
+                elif data.currentButton == "population": pos = 2
+                
+                # plot graph
+                plotGraphData = []
+                for dataPoint in data.snapshot.values():
+                    plotGraphData += [dataPoint[pos]]
+                maxValue = max(plotGraphData)
+                minValue = min(plotGraphData)
+                dataCount = len(plotGraphData)
+                difference = maxValue - minValue
+                horizontalSpacing = (data.menuCurrent[2]-data.menuCurrent[0]-28)/dataCount
+                if difference == 0: difference = 1
+                verticalSpacing = (data.menuCurrent[3]-data.menuCurrent[1]-48)/difference
+                for x in range(len(plotGraphData)):
+                    y = plotGraphData[x]
+                    xPos = x*horizontalSpacing + 32 + data.menuCurrent[0]
+                    yPos = (maxValue - y)*verticalSpacing + 20 + data.menuCurrent[1]
+                    canvas.create_oval(xPos,yPos,xPos+5,yPos+5,fill='black')
+
+
 
 
 ####################################
