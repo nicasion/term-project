@@ -49,14 +49,14 @@ def init(data):
     data.imageCurrent = None # holder for next image, intialize at None
 
     data.imageLogo = PhotoImage(file="title.png")
+    data.imageClose = PhotoImage(file="close.png")
+    data.imageGraph = PhotoImage(file="graph2.png")
     
+    # images: need to load actual files of map objects into init of Map.py
     data.imagePower = PhotoImage(file="wind.png")
     data.imageWater = PhotoImage(file="water.png")
     data.imageTree = PhotoImage(file="tree.png")
     data.imageConstruction = PhotoImage(file='construction3.png')
-    
-    data.imageClose = PhotoImage(file="close.png")
-    data.imageGraph = PhotoImage(file="graph2.png")
     
     im1 = Image.open("apartment.png")
     im1.thumbnail((45,45))
@@ -236,6 +236,7 @@ def timerFired(data):
         data.temporaryValue = False
         if data.timer % 100 == 0:
             data.map.desirabilityConstruction()
+            data.map.constructionStatus()
             data.calendar += 1
             data.budget -= data.monthlyExpense
             data.snapshot[data.calendar] = [data.budget,data.monthlyExpense,data.population]
