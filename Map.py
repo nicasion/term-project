@@ -6,6 +6,7 @@ from tkinter import *
 
 import pyautogui
 import math
+import random
 
 ####################################
 # OOP for Map
@@ -43,19 +44,20 @@ class Map(object):
                 y3 = y1
                 x4 = x2
                 y4 = y2 - self.smallBoxHeight
-                self.lstGridCoordinates[j] += [[x1,y1,x2,y2,x3,y3,x4,y4,"None",(j,i)]]
+                self.lstGridCoordinates[j] += [[x1,y1,x2,y2,x3,y3,x4,y4,None,(j,i)]]
         
         # initialize grid contents to be None
         self.gridContent = []
         for j in range(22):
             self.gridContent += [[]]
             for i in range(22):
-                self.gridContent[j] += [[None]] 
+                self.gridContent[j] += [None] 
         
         # images
         self.imagePower = PhotoImage(file="wind.png")
         self.imageWater = PhotoImage(file="water.png")
         self.imageTree = PhotoImage(file="tree.png")
+        self.imageConstruction = PhotoImage(file="construction3.png")
 
     # returns true if clicked within boundaries of a specified grid (slanted)
     def checkGridClick(clickX,clickY,gridCoordinates):
@@ -97,18 +99,38 @@ class Map(object):
             return True
     
     # to call from mouse pressed in main game file 
-    def mousePressAction(self,clickX,clickY,imageCurrent):
+    def mousePressAction(self,clickX,clickY,imageCurrent,color):
         for row in range(len(self.lstGridCoordinates)):
             for col in range(len(self.lstGridCoordinates[row])):
                 gridCoordinates = self.lstGridCoordinates[row][col]
                 if Map.checkGridClick(clickX,clickY,gridCoordinates):
-                    self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]] = imageCurrent
-                    # get coordinates of matching grid
-                    # replace data as imageCurrent
-                    
-                    return True
-        return False
+                    if self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]]==None:
+                        self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]] = imageCurrent
+                        # get coordinates of matching grid (at [9][0] and [9][1])
+                        # replace data as imageCurrent
+                        self.lstGridCoordinates[gridCoordinates[9][0]][gridCoordinates[9][1]][8] = color
+                        return True
+                    elif self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]]!=None: pass # if something is occupied already
 
+        return False
+    
+    # desirable city 
+    def desirabilityConstruction(self):
+        for row in range(len(self.gridContent)):
+            for col in range(len(self.gridContent[row])):
+                if self.gridContent[row][col] == "ZoningResidential":
+                    x = 50 # current score
+                    probability = (100/(1+math.e**(9-0.1*x)))
+                    # visualize at https://www.desmos.com/calculator/kn9tpwdan5
+                    randomGenerator = random.uniform(0,100)
+                    # if randomGenerator value is lower than probability, it will spawn
+                    if randomGenerator <= probability:
+                        print ('yes!')
+                        self.gridContent[row][col] = "imageConstruction"
+                
+        
+        
+    
     def draw(self,canvas):        
         # map
         canvas.create_polygon(self.mapX1,self.mapY1,self.mapX2,self.mapY2,
@@ -118,8 +140,8 @@ class Map(object):
         for row in range(len(self.lstGridCoordinates)):
             for col in range(len(self.lstGridCoordinates[row])):
                 smallBox = self.lstGridCoordinates[row][col]
-                if smallBox[8] == "None":
-                    color = "forestgreen"
+                if smallBox[8] == None:
+                    color = "limegreen"
                 else:
                     color = smallBox[8]
                 canvas.create_polygon(smallBox[0],smallBox[1],smallBox[2],smallBox[3],smallBox[4],smallBox[5],smallBox[6],smallBox[7],fill=color,outline="black",width = 2)
@@ -134,6 +156,8 @@ class Map(object):
                 canvas.create_image(x1+3,y1+9,anchor=SW, image=self.imageWater)
             elif input == "imageTree":
                 canvas.create_image(x1+7,y1+2,anchor=SW, image=self.imageTree)
+            elif input == "imageConstruction":
+                canvas.create_image(x1+3,y1+8,anchor=SW, image=self.imageConstruction)
             elif input == 'zoning':
                 x2 = x1 + self.smallBoxWidth/2
                 y2 = y1 + self.smallBoxHeight/2
@@ -149,4 +173,7 @@ class Map(object):
                 currentGrid = self.gridContent[row][col]
                 x1 = self.lstGridCoordinates[row][col][0]
                 y1 = self.lstGridCoordinates[row][col][1]
-                drawImageCalibrated(currentGrid,x1,y1)
+                try:
+                    drawImageCalibrated(currentGrid,x1,y1)
+                except:
+                    pass
