@@ -47,11 +47,10 @@ class Map(object):
                 self.lstGridCoordinates[j] += [[x1,y1,x2,y2,x3,y3,x4,y4,None,(j,i)]]
         
         # initialize grid contents to be None
-        self.gridContent = []
+        self.gridContent = {}
         for j in range(22):
-            self.gridContent += [[]]
             for i in range(22):
-                self.gridContent[j] += [None] 
+                self.gridContent[(j,i)] = {'content':None}
         
         # images
         self.imagePower = PhotoImage(file="wind.png")
@@ -104,29 +103,28 @@ class Map(object):
             for col in range(len(self.lstGridCoordinates[row])):
                 gridCoordinates = self.lstGridCoordinates[row][col]
                 if Map.checkGridClick(clickX,clickY,gridCoordinates):
-                    if self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]]==None:
-                        self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]] = imageCurrent
+                    if self.gridContent[(gridCoordinates[9][0],gridCoordinates[9][1])]['content']==None:
+                        self.gridContent[(gridCoordinates[9][0],gridCoordinates[9][1])]['content']= imageCurrent
                         # get coordinates of matching grid (at [9][0] and [9][1])
                         # replace data as imageCurrent
                         self.lstGridCoordinates[gridCoordinates[9][0]][gridCoordinates[9][1]][8] = color
                         return True
-                    elif self.gridContent[gridCoordinates[9][0]][gridCoordinates[9][1]]!=None: pass # if something is occupied already
+                    elif self.gridContent[(gridCoordinates[9][0],gridCoordinates[9][1])]['content']!=None: pass # if something is occupied already
 
         return False
     
     # desirable city 
     def desirabilityConstruction(self):
-        for row in range(len(self.gridContent)):
-            for col in range(len(self.gridContent[row])):
-                if self.gridContent[row][col] == "ZoningResidential":
-                    x = 50 # current score
-                    probability = (100/(1+math.e**(9-0.1*x)))
-                    # visualize at https://www.desmos.com/calculator/kn9tpwdan5
-                    randomGenerator = random.uniform(0,100)
-                    # if randomGenerator value is lower than probability, it will spawn
-                    if randomGenerator <= probability:
-                        print ('yes!')
-                        self.gridContent[row][col] = "imageConstruction"
+        for key in self.gridContent.keys():
+            if self.gridContent[key]['content'] == "ZoningResidential":
+                x = 50 # current score
+                probability = (100/(1+math.e**(9-0.1*x)))
+                # visualize at https://www.desmos.com/calculator/kn9tpwdan5
+                randomGenerator = random.uniform(0,100)
+                # if randomGenerator value is lower than probability, it will spawn
+                if randomGenerator <= probability:
+                    print ('yes!')
+                    self.gridContent[key]['content'] = "imageConstruction"
                 
         
         
@@ -168,12 +166,11 @@ class Map(object):
                 canvas.create_polygon(x1,y1,x2,y2,x3,y3,x4,y4,fill='red')
                 
         # to draw out objects for grid content
-        for row in range(len(self.gridContent)):
-            for col in range(len(self.gridContent[row])):
-                currentGrid = self.gridContent[row][col]
-                x1 = self.lstGridCoordinates[row][col][0]
-                y1 = self.lstGridCoordinates[row][col][1]
-                try:
-                    drawImageCalibrated(currentGrid,x1,y1)
-                except:
-                    pass
+        for key in self.gridContent.keys():
+            currentGrid = self.gridContent[key]['content']
+            x1 = self.lstGridCoordinates[key[0]][key[1]][0]
+            y1 = self.lstGridCoordinates[key[0]][key[1]][1]
+            try:
+                drawImageCalibrated(currentGrid,x1,y1)
+            except:
+                pass

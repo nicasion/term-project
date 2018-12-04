@@ -30,6 +30,7 @@ from PIL import ImageTk
 
 from Map import Map
 
+
 ####################################
 # core animation code
 ####################################
