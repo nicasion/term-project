@@ -163,12 +163,13 @@ def mousePressed(event, data):
                 if button[4] == 'load':
                     saveGameShelfFile = shelve.open('savedGames')
                     if 'mapGridContent' in saveGameShelfFile:
+                        data.calendar = saveGameShelfFile['calendar']
                         data.map.gridContent = saveGameShelfFile['mapGridContent']
-                        data.map2.gridContent = saveGameShelfFile['mapGridContent']
+                        data.map2.gridContent = saveGameShelfFile['map2GridContent']
                         data.map.stats = saveGameShelfFile['mapStats']
-                        data.map2.stats = saveGameShelfFile['mapStats']
+                        data.map2.stats = saveGameShelfFile['map2Stats']
                         data.map.snapshot = saveGameShelfFile['mapSnapshot']
-                        data.map2.snapshot = saveGameShelfFile['mapSnapshot']
+                        data.map2.snapshot = saveGameShelfFile['map2Snapshot']
 
 
 
@@ -184,6 +185,7 @@ def mousePressed(event, data):
             if checkButtonClick(event.x,event.y,button,data):
                 if button[4] == 'save':
                     saveGameShelfFile = shelve.open('savedGames')
+                    saveGameShelfFile['calendar'] = data.calendar
                     saveGameShelfFile['mapGridContent'] = data.map.gridContent
                     saveGameShelfFile['map2GridContent'] = data.map2.gridContent
                     saveGameShelfFile['mapStats'] = data.map.stats
