@@ -30,92 +30,101 @@ from PIL import ImageTk
 
 from Map import Map
 
-
 ####################################
 # core animation code
 ####################################
 
 def init(data):
+    # OVERALL
     data.gameState = "startscreen"
     
-    # initialize map
+    # MAP
     data.map = Map("Player1") 
+    data.map.randomMapGeneration()
+
     
-    # for images to follow mouse movement (calculation)
+    # for images to follow mouse movement (hardcoded based on Map.py)
     data.smallBoxWidth = 800/22 
     data.smallBoxHeight = 534/22
     
-    # images
-    data.imageCurrent = None # holder for next image, intialize at None
-
+    # IMAGES
+    # start screen
     data.imageLogo = PhotoImage(file="title.png")
+    # play: stats
     data.imageClose = PhotoImage(file="close.png")
     data.imageGraph = PhotoImage(file="graph2.png")
-    
-    # images: need to load actual files of map objects into init of Map.py
+    # play: objects (to load into Map.py)
     data.imagePower = PhotoImage(file="wind.png")
     data.imageWater = PhotoImage(file="water.png")
     data.imageTree = PhotoImage(file="tree.png")
     data.imageConstruction = PhotoImage(file='construction3.png')
-    
     im1 = Image.open("apartment.png")
     im1.thumbnail((45,45))
     data.imageApartment = ImageTk.PhotoImage(im1)
-    
     im2 = Image.open("cabin2.png")
     im2.thumbnail((35,35))
     data.imageCabin = ImageTk.PhotoImage(im2)
-    
     im3 = Image.open("store2.png")
     im3.thumbnail((35,35))
     data.imageStore = ImageTk.PhotoImage(im3)
-    
     im4 = Image.open("industry2.png")
     im4.thumbnail((35,35))
     data.imageIndustry = ImageTk.PhotoImage(im4)
+    im5 = Image.open("bulldoze.png")
+    im5.thumbnail((25,25))
+    data.imageDemolish = ImageTk.PhotoImage(im5)
     
-    # General game data to keep track of
-    data.population = 0
-    data.budget = 10000
+    # GAME DATA
+    data.temporaryValue = False # refreshes at timerFired 
     data.timer = 0
+    data.imageCurrent = None # holder for next image, intialize at None
+    data.colorGrid = None
+    data.menuCurrent = None
+    data.currentButton = None
+    # stats shown (stored here in main.py)
     data.calendar = 1
+    data.budget = 10000
     data.monthlyExpense = 0
     data.monthlyIncome = 0
+    data.snapshot = {1:[10000,0,0]} # budget,monthlyExpense,population
+    # stats stored in Map.py: Population
     
-    data.temporaryValue = False # refreshes at timerFired
-    
-    # Specific Data
+    # object data
     data.constructionCost = {'imagePower':100,'imageWater':50,'imageTree':20, 'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
     data.monthlyCost = {'imagePower':10,'imageWater':5,'imageTree':2,'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
-    
-    
-    # sequence in dictionary[key] = budget,monthlyExpense,population
-    data.snapshot = {1:[10000,0,0]}
-    
-    
-    # UI coordinates (start screen)
+
+    # USER INTERFACE 
+    # coordinates (start screen)
     data.coordinatesStart = [(data.width/2-100,data.height/2,data.width/2+100,data.height/2+50,'start'),(data.width/2-100,data.height/2 +70,data.width/2+100,data.height/2+50+70,'load')]
-    
-    # UI coordinates (play game): Build,NonBuild,Stats (BUTTONS)
-    data.coordinatesBuild = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree")]
-    
+    # coordinates (play game)
+    # build -- click to build
+    data.coordinatesBuild = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree"),(10,100,90,120,'imageDemolish')]
+    # direct function -- settings/anything that does not involve building/no menu
     data.coordinatesDirectFunction = [(790,115,860,140,'save')]
-    
-    ## MAIN ADD AREA!!!
+    # non-build -- intermediate button, click to expand menu
+    # x1,y1,x2,y2,'button name',5=menu length,6=menu item count,
+    # 7='item 1 imagefile',8='item 1 color',9='item 1 text', then repeat
     data.coordinatesNonBuild = [(10,100,90,120,"zoning",200,3,"ZoningResidential","olivedrab","Residential","imageTree",'lightblue','Commerical',"ZoningIndustrial",'yellow','Industrial')]
-    # 5th pos = length, 6th pos = count of object, 7th = "imagefile", 8th = color of layer, 9th = text, 10th = repeat 7th for next set...
-    data.coordinatesStats = [(120,660,200,680,'budget'),(220,660,340,680,'monthlyExpense')]
-        
-    # Coordinates for Menu
+    # stats -- to show graphs etc
+    data.statsCategory = ['Budget','Monthly Expense','Population']
+    x1,y1 = (120,640)
+    width,height,xSpacing,ySpacing = (80,20,20,10)
+    data.coordinatesStats = []
+    for num in range(len(data.statsCategory)):
+        data.coordinatesStats += [((x1+num*(width+xSpacing),y1+num*(height+ySpacing),x1+num*(width+xSpacing),y1+num*(width+xSpacing)))]
+    data.coordinatesStats = [(120,640,200,660,'Budget'),(220,640,340,660,'Monthly Expense'),(360,640,480,660,'Population')]
+    
+    # AUTOMATIC CALCULATION FOR MENU
+    # menu coordinates (for bottom bar)
     data.menuBgAbove = {}
     for coordinate in data.coordinatesStats:
         key = coordinate[4]
         data.menuBgAbove[key] = (coordinate[0],450,coordinate[0]+280,450+200)
-    
+    # menu coordinates (for left bar)
     data.menuBgSide = {}
     for coordinate in data.coordinatesNonBuild:
         key = coordinate[4]
-        data.menuBgSide[key] = (110,coordinate[1]-coordinate[5]/2,110+200,coordinate[1]+coordinate[5]/2,coordinate[6])
+        data.menuBgSide[key] = (110,coordinate[1]-coordinate[5]/2,110+200,coordinate[1]+coordinate[5]/2,coordinate[6]) 
         cycle = int((len(coordinate) - 7)/3)
         for i in range(cycle):
             data.menuBgSide[key] += (coordinate[7+(i*3)],coordinate[8+(i*3)],coordinate[9+(i*3)])
@@ -134,9 +143,7 @@ def init(data):
             else:
                 data.menuOptionChecker[key] = [(rx1,ry1,rx2,ry2,data.menuBgSide[key][5+(num*3)],data.menuBgSide[key][6+(num*3)])]
     
-    data.menuCurrent = None
-    data.currentButton = None
-    data.colorGrid = None
+    
 
 # to check if clicked on button (for UI)
 def checkButtonClick(clickX,clickY,buttonCoordinates,data):
@@ -161,6 +168,8 @@ def mousePressed(event, data):
                         print('error')
     
     elif data.gameState == "play":
+        # need to check for budget requirements.
+        
         # check for button click (direct functionalities)
         for button in data.coordinatesDirectFunction:
             if checkButtonClick(event.x,event.y,button,data):
@@ -225,6 +234,16 @@ def keyPressed(event, data):
         print (data.currentButton)
     if event.keysym == 'a':
         print (data.colorGrid)
+    if event.keysym == 'b':
+        # pollution heat map
+        for key in data.map.gridContent.keys():
+            pollution = data.map.gridContent[key]['pollution']
+            if pollution >= 45: data.map.gridContent[key]['temp'] = 'darkred'
+            elif 30 <= pollution < 45: data.map.gridContent[key]['temp'] = 'red'
+            elif 20 <= pollution < 30: data.map.gridContent[key]['temp'] = 'darkorange'
+            elif 10 <= pollution < 20: data.map.gridContent[key]['temp'] = 'yellow'
+            elif 0 <= pollution < 10: data.map.gridContent[key]['temp'] = 'springgreen'
+
     pass
 
 
@@ -234,12 +253,14 @@ def timerFired(data):
         data.mouseX, data.mouseY = pyautogui.position()
         data.timer += 1
         data.temporaryValue = False
-        if data.timer % 100 == 0:
+        data.map.statsRefresh()
+        if data.timer % 10 == 0: #100
             data.map.desirabilityConstruction()
             data.map.constructionStatus()
+            data.map.pollutionSpread()
             data.calendar += 1
             data.budget -= data.monthlyExpense
-            data.snapshot[data.calendar] = [data.budget,data.monthlyExpense,data.population]
+            data.snapshot[data.calendar] = [data.budget,data.monthlyExpense,data.map.stats['population']]
 
 
 
@@ -262,8 +283,12 @@ def redrawAll(canvas, data):
         canvas.create_rectangle(790,15,860,40,fill="white") # box for 'day'
         canvas.create_text(800,20,text="Day %s"%(str(data.calendar)),anchor=NW)
         canvas.create_text(790,50,text="Budget = %d"%(data.budget),anchor=NW)
-        canvas.create_text(790,70,text="Population = %d"%(data.population),anchor=NW)
+        canvas.create_text(790,70,text="Population = %d"%(data.map.stats['population']),anchor=NW)
         canvas.create_text(790,90,text="Monthly Expense = %d"%(data.monthlyExpense),anchor=NW)
+        canvas.create_text(790,150,text="Water Supply = %d"%(data.map.stats['water']),anchor=NW)
+        canvas.create_text(790,170,text="Jobs = %d"%(data.map.stats['jobs']),anchor=NW)
+
+
         
         # temp position- save button
         canvas.create_rectangle(790,115,860,140,fill="white")
@@ -287,16 +312,12 @@ def redrawAll(canvas, data):
 
     
         # UI (stats/non-build menu)
-        canvas.create_rectangle(0,650,data.width,data.height,fill="grey",
+        canvas.create_rectangle(0,630,data.width,data.height,fill="grey",
             outline='grey')
         for rectangle in data.coordinatesStats:
             canvas.create_rectangle(rectangle[0],rectangle[1],rectangle[2],
                 rectangle[3],fill='white')
-        
-        
-        canvas.create_text(137,663,text="Budget",anchor=NW)
-        canvas.create_text(227,663,text="Monthly Expense",anchor=NW)
-        
+            canvas.create_text((rectangle[0]+rectangle[2])/2,rectangle[1]+3,text=rectangle[4],anchor=N)
         
         
         
@@ -305,12 +326,13 @@ def redrawAll(canvas, data):
         def drawImageCalibrated(input,x1,y1): 
             if input == None: pass
             elif input == "imagePower":
-                canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
+                # canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
                 # canvas.create_image(x1,y1+8,anchor=SW, image=data.imageApartment)
                 # canvas.create_image(x1+3,y1+11,anchor=SW, image=data.imageCabin) 
                 # canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageStore) 
-                # canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageIndustry) 
-                # canvas.create_image(x1+1,y1+11,anchor=SW, image=data.im_tk) 
+                # canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageIndustry)
+                # canvas.create_image(x1+5,y1+11,anchor=SW, image=data.imageDemolish)  
+                canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageTest) 
 
             elif input == "imageWater":
                 canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
@@ -378,9 +400,9 @@ def redrawAll(canvas, data):
             
             
                 # retrieving from snapshot values, assign position for retrieval
-                if data.currentButton == "budget": pos = 0
-                elif data.currentButton == "monthlyExpense": pos = 1
-                elif data.currentButton == "population": pos = 2
+                if data.currentButton == "Budget": pos = 0
+                elif data.currentButton == "Monthly Expense": pos = 1
+                elif data.currentButton == "Population": pos = 2
                 
                 # plot graph
                 plotGraphData = []
@@ -398,10 +420,9 @@ def redrawAll(canvas, data):
                     xPos = x*horizontalSpacing + 32 + data.menuCurrent[0]
                     yPos = (maxValue - y)*verticalSpacing + 20 + data.menuCurrent[1]
                     canvas.create_oval(xPos,yPos,xPos+5,yPos+5,fill='black')
-
-
-
-
+            
+            
+            
 ####################################
 # use the run function as-is
 ####################################
