@@ -97,30 +97,32 @@ def init(data):
     # USER INTERFACE 
     # coordinates (start screen)
     data.coordinatesStart = [(data.width/2-100,data.height/2,data.width/2+100,data.height/2+50,'start'),(data.width/2-100,data.height/2 +70,data.width/2+100,data.height/2+50+70,'load')]
+    
     # coordinates (play game)
     # build -- click to build
     data.coordinatesBuild = [(10,10,90,30,"imagePower"),(10,40,90,60,"imageWater"),(10,70,90,90,"imageTree"),(10,100,90,120,'imageDemolish')]
     # direct function -- settings/anything that does not involve building/no menu
-    data.coordinatesDirectFunction = [(790,115,860,140,'save')]
+    data.coordinatesDirectFunction = [(data.width-200,640,data.width-100,660,'save')]
     # non-build -- intermediate button, click to expand menu
     # x1,y1,x2,y2,'button name',5=menu length,6=menu item count,
     # 7='item 1 imagefile',8='item 1 color',9='item 1 text', then repeat
     data.coordinatesNonBuild = [(10,100,90,120,"zoning",200,3,"ZoningResidential","olivedrab","Residential","imageTree",'lightblue','Commerical',"ZoningIndustrial",'yellow','Industrial')]
+    
     # stats -- to show graphs etc
-    data.statsCategory = ['budget','monthly expense','population']
-    x1,y1 = (120,640)
-    width,height,xSpacing,ySpacing = (80,20,20,10)
-    data.coordinatesStats = []
-    for num in range(len(data.statsCategory)):
-        data.coordinatesStats += [((x1+num*(width+xSpacing),y1+num*(height+ySpacing),x1+num*(width+xSpacing),y1+num*(width+xSpacing)))]
-    data.coordinatesStats = [(120,640,200,660,'budget'),(220,640,340,660,'monthly expense'),(360,640,480,660,'population')]
+    # data.statsCategory = ['budget','monthly expense','population']
+    # x1,y1 = (120,640)
+    # width,height,xSpacing,ySpacing = (80,20,20,10)
+    # data.coordinatesStats = []
+    # for num in range(len(data.statsCategory)):
+    #     data.coordinatesStats += [((x1+num*(width+xSpacing),y1+num*(height+ySpacing),x1+num*(width+xSpacing),y1+num*(width+xSpacing)))]
+    data.coordinatesStats = [(120,640,200,660,'budget'),(220,640,320,660,'population'),(340,640,400,660,'water'),(420,640,480,660,'power')]
     
     # AUTOMATIC CALCULATION FOR MENU
     # menu coordinates (for bottom bar)
     data.menuBgAbove = {}
     for coordinate in data.coordinatesStats:
         key = coordinate[4]
-        data.menuBgAbove[key] = (coordinate[0],450,coordinate[0]+280,450+200)
+        data.menuBgAbove[key] = (coordinate[0],330,coordinate[0]+280,350+270)
     # menu coordinates (for left bar)
     data.menuBgSide = {}
     for coordinate in data.coordinatesNonBuild:
@@ -246,6 +248,7 @@ def mousePressed(event, data):
                 if data.gameState == 'play':
                     data.map.stats['budget'] -= cost
                     data.map.stats['monthly expense'] += data.monthlyCost[data.imageCurrent]
+                    
                 elif data.gameState == 'play2':
                     data.map2.stats['budget'] -= cost
                     data.map2.stats['monthly expense'] += data.monthlyCost[data.imageCurrent]
@@ -275,12 +278,19 @@ def keyPressed(event, data):
             elif 20 <= pollution < 30: data.map.gridContent[key]['temp'] = 'darkorange'
             elif 10 <= pollution < 20: data.map.gridContent[key]['temp'] = 'yellow'
             elif 0 <= pollution < 10: data.map.gridContent[key]['temp'] = 'springgreen'
+    if event.keysym == 'c':
+        for key in data.map.gridContent.keys():
+            del data.map.gridContent[key]['temp']
     if event.keysym == '2':
         data.gameState = "play2"
         data.imageCurrent = None
+        data.menuCurrent = None
+        data.currentButton = None
     if event.keysym == '1':
         data.gameState = "play"
         data.imageCurrent = None
+        data.menuCurrent = None
+        data.currentButton = None
 
 
     pass
@@ -337,20 +347,11 @@ def redrawAll(canvas, data):
         if data.gameState == 'play': 
             canvas.create_text(790,50,text="Budget = %d"%(data.map.stats['budget']),anchor=NW)
             canvas.create_text(790,70,text="Population = %d"%(data.map.stats['population']),anchor=NW)
-            canvas.create_text(790,90,text="Monthly Expense = %d"%(data.map.stats['monthly expense']),anchor=NW)
-            canvas.create_text(790,150,text="Water Supply = %d"%(data.map.stats['water']),anchor=NW)
-            canvas.create_text(790,170,text="Jobs = %d"%(data.map.stats['jobs']),anchor=NW)        
         elif data.gameState == 'play2': 
             canvas.create_text(790,50,text="Budget = %d"%(data.map2.stats['budget']),anchor=NW)
             canvas.create_text(790,70,text="Population = %d"%(data.map2.stats['population']),anchor=NW)
-            canvas.create_text(790,90,text="Monthly Expense = %d"%(data.map2.stats['monthly expense']),anchor=NW)
-            canvas.create_text(790,150,text="Water Supply = %d"%(data.map2.stats['water']),anchor=NW)
-            canvas.create_text(790,170,text="Jobs = %d"%(data.map2.stats['jobs']),anchor=NW)
 
 
-        
-        # temp position- save button
-        canvas.create_rectangle(790,115,860,140,fill="white")
 
             
         # UI (build menu)
@@ -378,20 +379,21 @@ def redrawAll(canvas, data):
                 rectangle[3],fill='white')
             canvas.create_text((rectangle[0]+rectangle[2])/2,rectangle[1]+3,text=rectangle[4],anchor=N)
         
-        
+        # temp position- save button 420,640,480,660
+        canvas.create_rectangle(data.width-200,640,data.width-100,660,fill="white")
+        canvas.create_text(data.width-150,650,text='save')
         
         # hardcoded adjustments for specific images for following of mouse movement
         # this must be also updated along with the one stored in Map.py
         def drawImageCalibrated(input,x1,y1): 
             if input == None: pass
             elif input == "imagePower":
-                # canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
+                canvas.create_image(x1,y1+4,anchor=SW, image=data.imagePower)
                 # canvas.create_image(x1,y1+8,anchor=SW, image=data.imageApartment)
                 # canvas.create_image(x1+3,y1+11,anchor=SW, image=data.imageCabin) 
                 # canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageStore) 
                 # canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageIndustry)
                 # canvas.create_image(x1+5,y1+11,anchor=SW, image=data.imageDemolish)  
-                canvas.create_image(x1+1,y1+11,anchor=SW, image=data.imageTest) 
 
             elif input == "imageWater":
                 canvas.create_image(x1+3,y1+9,anchor=SW, image=data.imageWater)
@@ -453,16 +455,37 @@ def redrawAll(canvas, data):
 
             # menu BG for stats
             if data.currentButton in data.menuBgAbove.keys():
-                canvas.create_image(data.menuCurrent[2]-19,data.menuCurrent[1]+8,anchor=NE, image=data.imageGraph)
-                canvas.create_text(data.menuCurrent[0]+34,data.menuCurrent[1]+4,text=data.currentButton,anchor=NW)
-                canvas.create_text(data.menuCurrent[2]-44,data.menuCurrent[3],text="time",anchor=SE)
+                canvas.create_rectangle(data.menuCurrent[0]+5,data.menuCurrent[1]+70,data.menuCurrent[2]-5,data.menuCurrent[3]-5,fill='white')
+                canvas.create_image(data.menuCurrent[2]-9,data.menuCurrent[1]+88,anchor=NE, image=data.imageGraph)
+                canvas.create_text(data.menuCurrent[0]+15,data.menuCurrent[1]+72,text=data.currentButton,anchor=NW)
+                canvas.create_text(data.menuCurrent[2]-30,data.menuCurrent[3]-8,text="time",anchor=SE)
+                if data.currentButton == 'budget' and data.gameState == 'play':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+18,text='city budget: %d'%(data.map.stats['budget']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+35,text='monthly income: %d'%(data.map.stats['monthly income']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+52,text='monthly expense: %d'%(data.map.stats['monthly expense']))
+                elif data.currentButton == 'budget' and data.gameState == 'play2':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+18,text='city budget: %d'%(data.map2.stats['budget']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+35,text='monthly income: %d'%(data.map2.stats['monthly income']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+52,text='monthly expense: %d'%(data.map2.stats['monthly expense']))
+                elif data.currentButton == 'population' and data.gameState == 'play':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+18,text='population: %d'%(data.map.stats['population']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+35,text='jobs: %d'%(data.map.stats['jobs']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+52,text='unemployed: %d'%(data.map.stats['unemployed']))
+                elif data.currentButton == 'population' and data.gameState == 'play2':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+18,text='population: %d'%(data.map2.stats['population']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+35,text='jobs: %d'%(data.map2.stats['jobs']))
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+52,text='unemployed: %d'%(data.map2.stats['unemployed']))
+                elif data.currentButton == 'water' and data.gameState == 'play':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+18,text='water supply: %d'%(data.map.stats['water']))
+                elif data.currentButton == 'water' and data.gameState == 'play2':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+18,text='water supply: %d'%(data.map2.stats['water']))
+                elif data.currentButton == 'power' and data.gameState == 'play':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+35,text='power supply: %d'%(data.map.stats['power']))
+                elif data.currentButton == 'power' and data.gameState == 'play2':
+                    canvas.create_text((data.menuCurrent[0]+data.menuCurrent[2])/2,data.menuCurrent[1]+35,text='power supply: %d'%(data.map2.stats['power']))
+
             
-            
-                # retrieving from snapshot values, assign position for retrieval
-                # if data.currentButton == "budget": pos = 0
-                # elif data.currentButton == "monthly Expense": pos = 1
-                # elif data.currentButton == "population": pos = 2
-                
+
                 # plot graph
                 plotGraphData = []
                 if data.gameState == 'play': snapshot = data.map.snapshot
@@ -474,17 +497,17 @@ def redrawAll(canvas, data):
                 minValue = min(plotGraphData)
                 dataCount = len(plotGraphData)
                 difference = maxValue - minValue
-                horizontalSpacing = (data.menuCurrent[2]-data.menuCurrent[0]-28)/dataCount
+                horizontalSpacing = (data.menuCurrent[2]-data.menuCurrent[0]-68)/dataCount
                 if difference == 0: difference = 1
-                verticalSpacing = (data.menuCurrent[3]-data.menuCurrent[1]-48)/difference
+                verticalSpacing = (data.menuCurrent[3]-data.menuCurrent[1]-140)/difference
                 for x in range(len(plotGraphData)):
                     y = plotGraphData[x]
-                    xPos = x*horizontalSpacing + 32 + data.menuCurrent[0]
-                    yPos = (maxValue - y)*verticalSpacing + 20 + data.menuCurrent[1]
+                    xPos = x*horizontalSpacing + 50 + data.menuCurrent[0]
+                    yPos = (maxValue - y)*verticalSpacing + 93 + data.menuCurrent[1]
                     canvas.create_oval(xPos,yPos,xPos+5,yPos+5,fill='black')
-            
-            
-            
+                
+                
+        
 ####################################
 # use the run function as-is
 ####################################

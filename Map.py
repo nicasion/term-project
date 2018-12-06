@@ -53,10 +53,10 @@ class Map(object):
                 self.gridContent[(j,i)] = {'content':None,'coordinates':(x1,y1,x2,y2,x3,y3,x4,y4),'color':None,'pollution':0,'population':0}
         
         # requirements
-        self.requirements = {'imageApartment':{'power consumption':100,'water consumption':100,'polluting':3,'population':100},'imageStore':{'power consumption':100,'water consumption':100,'polluting':3,'jobs':10},'imageIndustry':{'power consumption':200,'water consumption':200,'polluting':30,'jobs':60}}
+        self.requirements = {'imageApartment':{'power consumption':100,'water consumption':100,'polluting':3,'population':100},'imageStore':{'power consumption':100,'water consumption':100,'polluting':3,'jobs':10,'monthly income':500},'imageIndustry':{'power consumption':200,'water consumption':200,'polluting':30,'jobs':60,'monthly income':500}}
         
         # stats
-        self.stats = {'budget': 10000,'monthly expense':0,'monthly income':0, 'population':0,'jobs':0, 'water':0, 'power':0}
+        self.stats = {'budget': 10000,'monthly expense':0,'monthly income':0, 'population':0,'jobs':0, 'water':0, 'power':0, 'unemployed':0}
         self.snapshot = {1:copy.deepcopy(self.stats)}
         
         # images
@@ -237,6 +237,8 @@ class Map(object):
                         self.gridContent[key]['pollution'] = self.requirements[current]['polluting']
                     if 'jobs' in self.requirements[current].keys():
                         self.gridContent[key]['jobs'] = self.requirements[current]['jobs']
+                    if 'monthly income' in self.requirements[current].keys():
+                        self.gridContent[key]['monthly income'] = self.requirements[current]['monthly income']
                      
     
     # refreshes and consolidates stats
@@ -245,10 +247,13 @@ class Map(object):
         statsRefreshRequired = {'population':0,'jobs':0, 'water':0, 'power':0}
         for key in self.gridContent.keys():
             currentGrid = self.gridContent[key]
-            for statLabel in self.stats:
-                self.stats[statLabel] += currentGrid.get(statLabel,0)
+            for statLabel in statsRefreshRequired:
+                statsRefreshRequired[statLabel] += currentGrid.get(statLabel,0)
         self.stats.update(statsRefreshRequired)
-    
+        unemployed = self.stats['population'] - self.stats['jobs']
+        if unemployed < 0: unemployed = 0
+        self.stats['unemployed'] = unemployed
+        
     # spread of pollution, based on random wind direction
     def pollutionSpread(self):
         randomValue = random.randint(0,3)
