@@ -7,8 +7,10 @@ from tkinter import *
 import pyautogui
 import math
 import random
+import copy
 from PIL import Image
 from PIL import ImageTk
+
 
 ####################################
 # OOP for Map
@@ -16,7 +18,10 @@ from PIL import ImageTk
 
 class Map(object):
 
-    def __init__(self,playerName):        
+    def __init__(self,playerName):
+        # playerName
+        self.playerName = playerName
+        
         # main map             
         self.height = 534
         self.width = 800
@@ -51,7 +56,8 @@ class Map(object):
         self.requirements = {'imageApartment':{'power consumption':100,'water consumption':100,'polluting':3,'population':100},'imageStore':{'power consumption':100,'water consumption':100,'polluting':3,'jobs':10},'imageIndustry':{'power consumption':200,'water consumption':200,'polluting':30,'jobs':60}}
         
         # stats
-        self.stats = {'population':0,'jobs':0, 'water':0, 'power':0}
+        self.stats = {'budget': 10000,'monthly expense':0,'monthly income':0, 'population':0,'jobs':0, 'water':0, 'power':0}
+        self.snapshot = {1:copy.deepcopy(self.stats)}
         
         # images
         self.imagePower = PhotoImage(file="wind.png")
@@ -75,6 +81,9 @@ class Map(object):
         im4.thumbnail((35,35))
         self.imageIndustry = ImageTk.PhotoImage(im4)
     
+    def updateSnapshot(self,currentDay):
+        self.snapshot[currentDay] = copy.deepcopy(self.stats)
+    
     # returns a list of adjacent cells
     def adjacentCellGenerator(currentCell):
         x = currentCell[0]
@@ -86,6 +95,7 @@ class Map(object):
                 lst.pop(position)
         return lst
     
+    # initial map generation
     def randomMapGeneration(self):
         randomNum = random.randint(6,15)
         randomNum2 = random.randint(0,1)
@@ -98,7 +108,6 @@ class Map(object):
             if randomChance >= 0.85:
                 self.gridContent[key]['content'] = 'imageTree'
                 adjacentCells = Map.adjacentCellGenerator(key)
-                print(adjacentCells)
                 for cell in adjacentCells:
                     randomChance = random.uniform(0,1)
                     if randomChance >= 0.70:
@@ -109,7 +118,7 @@ class Map(object):
                             pass
         for key in self.gridContent.keys():
             if self.gridContent[key]['content'] == 'imageTree':
-                self.gridContent[key]['color'] == 'forestgreen'
+                self.gridContent[key]['color'] = 'forestgreen'
             
 
     # returns true if clicked within boundaries of a specified grid (slanted)
@@ -232,11 +241,13 @@ class Map(object):
     
     # refreshes and consolidates stats
     def statsRefresh(self):
-        self.stats = {'population':0,'jobs':0, 'water':0, 'power':0}
+        # this!!!!
+        statsRefreshRequired = {'population':0,'jobs':0, 'water':0, 'power':0}
         for key in self.gridContent.keys():
             currentGrid = self.gridContent[key]
             for statLabel in self.stats:
                 self.stats[statLabel] += currentGrid.get(statLabel,0)
+        self.stats.update(statsRefreshRequired)
     
     # spread of pollution, based on random wind direction
     def pollutionSpread(self):

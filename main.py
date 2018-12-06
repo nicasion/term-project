@@ -20,6 +20,7 @@ from tkinter import *
 import pyautogui
 import math
 import random
+import copy
 import shelve
 from PIL import Image
 from PIL import ImageTk
@@ -41,6 +42,10 @@ def init(data):
     # MAP
     data.map = Map("Player1") 
     data.map.randomMapGeneration()
+    
+    # Simulate player2
+    data.map2 = Map("Player2") 
+    data.map2.randomMapGeneration()
 
     
     # for images to follow mouse movement (hardcoded based on Map.py)
@@ -83,11 +88,7 @@ def init(data):
     data.currentButton = None
     # stats shown (stored here in main.py)
     data.calendar = 1
-    data.budget = 10000
-    data.monthlyExpense = 0
-    data.monthlyIncome = 0
-    data.snapshot = {1:[10000,0,0]} # budget,monthlyExpense,population
-    # stats stored in Map.py: Population
+    # stats stored in Map.py: Population Budget MonthlyExpense MonthlyIncome
     
     # object data
     data.constructionCost = {'imagePower':100,'imageWater':50,'imageTree':20, 'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
@@ -106,13 +107,13 @@ def init(data):
     # 7='item 1 imagefile',8='item 1 color',9='item 1 text', then repeat
     data.coordinatesNonBuild = [(10,100,90,120,"zoning",200,3,"ZoningResidential","olivedrab","Residential","imageTree",'lightblue','Commerical',"ZoningIndustrial",'yellow','Industrial')]
     # stats -- to show graphs etc
-    data.statsCategory = ['Budget','Monthly Expense','Population']
+    data.statsCategory = ['budget','monthly expense','population']
     x1,y1 = (120,640)
     width,height,xSpacing,ySpacing = (80,20,20,10)
     data.coordinatesStats = []
     for num in range(len(data.statsCategory)):
         data.coordinatesStats += [((x1+num*(width+xSpacing),y1+num*(height+ySpacing),x1+num*(width+xSpacing),y1+num*(width+xSpacing)))]
-    data.coordinatesStats = [(120,640,200,660,'Budget'),(220,640,340,660,'Monthly Expense'),(360,640,480,660,'Population')]
+    data.coordinatesStats = [(120,640,200,660,'budget'),(220,640,340,660,'monthly expense'),(360,640,480,660,'population')]
     
     # AUTOMATIC CALCULATION FOR MENU
     # menu coordinates (for bottom bar)
@@ -163,11 +164,19 @@ def mousePressed(event, data):
                     saveGameShelfFile = shelve.open('savedGames')
                     if 'mapGridContent' in saveGameShelfFile:
                         data.map.gridContent = saveGameShelfFile['mapGridContent']
+                        data.map2.gridContent = saveGameShelfFile['mapGridContent']
+                        data.map.stats = saveGameShelfFile['mapStats']
+                        data.map2.stats = saveGameShelfFile['mapStats']
+                        data.map.snapshot = saveGameShelfFile['mapSnapshot']
+                        data.map2.snapshot = saveGameShelfFile['mapSnapshot']
+
+
+
                         print ('loaded')
                     else:
                         print('error')
     
-    elif data.gameState == "play":
+    elif data.gameState == "play" or data.gameState == 'play2':
         # need to check for budget requirements.
         
         # check for button click (direct functionalities)
@@ -176,8 +185,16 @@ def mousePressed(event, data):
                 if button[4] == 'save':
                     saveGameShelfFile = shelve.open('savedGames')
                     saveGameShelfFile['mapGridContent'] = data.map.gridContent
+                    saveGameShelfFile['map2GridContent'] = data.map2.gridContent
+                    saveGameShelfFile['mapStats'] = data.map.stats
+                    saveGameShelfFile['map2Stats'] = data.map2.stats
+                    saveGameShelfFile['mapSnapshot'] = data.map.snapshot
+                    saveGameShelfFile['map2Snapshot'] = data.map2.snapshot
+
                     print ('game saved')
-    
+                elif button[4] == 'demolish':
+                    data.imageCurrent = button[4]
+                        
         # check for button click (build menu)
         for button in data.coordinatesBuild:
             if checkButtonClick(event.x,event.y,button,data):
@@ -217,19 +234,32 @@ def mousePressed(event, data):
         # check for grid click only if there is an existing imagecurrent
         # link to Map Class OOP
         if data.imageCurrent != None:
-            data.temporaryValue = data.map.mousePressAction(event.x,event.y,data.imageCurrent,data.colorGrid)
+            if data.gameState == 'play':
+                data.temporaryValue = data.map.mousePressAction(event.x,event.y,data.imageCurrent,data.colorGrid)
+            elif data.gameState == 'play2':
+                data.temporaryValue = data.map2.mousePressAction(event.x,event.y,data.imageCurrent,data.colorGrid)
+
             if data.temporaryValue == True:
                 cost = data.constructionCost[data.imageCurrent]
-                data.budget -= cost
-                data.monthlyExpense += data.monthlyCost[data.imageCurrent]
+                if data.gameState == 'play':
+                    data.map.stats['budget'] -= cost
+                    data.map.stats['monthly expense'] += data.monthlyCost[data.imageCurrent]
+                elif data.gameState == 'play2':
+                    data.map2.stats['budget'] -= cost
+                    data.map2.stats['monthly expense'] += data.monthlyCost[data.imageCurrent]
 
 
 def keyPressed(event, data):
     # use event.char and event.keysym
     if event.keysym == "Up":
-        print (data.map.gridContent)
+        print ('start \n \n \n')
+        print (data.map.stats)
+        print ('end \n \n \n')
     if event.keysym == "Down":
-        print (data.snapshot)
+        print ('start \n \n \n')
+        print (data.map.snapshot)
+        print ('end \n \n \n')
+
     if event.keysym == 'Left':
         print (data.currentButton)
     if event.keysym == 'a':
@@ -243,24 +273,40 @@ def keyPressed(event, data):
             elif 20 <= pollution < 30: data.map.gridContent[key]['temp'] = 'darkorange'
             elif 10 <= pollution < 20: data.map.gridContent[key]['temp'] = 'yellow'
             elif 0 <= pollution < 10: data.map.gridContent[key]['temp'] = 'springgreen'
+    if event.keysym == '2':
+        data.gameState = "play2"
+        data.imageCurrent = None
+    if event.keysym == '1':
+        data.gameState = "play"
+        data.imageCurrent = None
+
 
     pass
 
 
 
 def timerFired(data):
-    if data.gameState == 'play':
+    if data.gameState == 'play' or data.gameState == 'play2':
         data.mouseX, data.mouseY = pyautogui.position()
         data.timer += 1
         data.temporaryValue = False
         data.map.statsRefresh()
+        data.map2.statsRefresh()
         if data.timer % 10 == 0: #100
+            data.calendar += 1
+            # if data.gameState == 'play':
             data.map.desirabilityConstruction()
             data.map.constructionStatus()
             data.map.pollutionSpread()
-            data.calendar += 1
-            data.budget -= data.monthlyExpense
-            data.snapshot[data.calendar] = [data.budget,data.monthlyExpense,data.map.stats['population']]
+            data.map.stats['budget'] -= data.map.stats['monthly expense']
+            data.map.updateSnapshot(data.calendar)
+
+            # if data.gameState == 'play2':
+            data.map2.desirabilityConstruction()
+            data.map2.constructionStatus()
+            data.map2.pollutionSpread()
+            data.map2.stats['budget'] -= data.map2.stats['monthly expense']
+            data.map2.updateSnapshot(data.calendar)
 
 
 
@@ -276,17 +322,28 @@ def redrawAll(canvas, data):
 
 
     # for actual gameplay
-    if data.gameState == "play":
-        data.map.draw(canvas) # draws the map... from Map.py
+    if data.gameState == "play" or data.gameState == 'play2':
+        # draws the map... from Map.py
+        if data.gameState == 'play': 
+            data.map.draw(canvas) 
+        elif data.gameState == 'play2': 
+            data.map2.draw(canvas) 
         
         # UI (right corner)
         canvas.create_rectangle(790,15,860,40,fill="white") # box for 'day'
         canvas.create_text(800,20,text="Day %s"%(str(data.calendar)),anchor=NW)
-        canvas.create_text(790,50,text="Budget = %d"%(data.budget),anchor=NW)
-        canvas.create_text(790,70,text="Population = %d"%(data.map.stats['population']),anchor=NW)
-        canvas.create_text(790,90,text="Monthly Expense = %d"%(data.monthlyExpense),anchor=NW)
-        canvas.create_text(790,150,text="Water Supply = %d"%(data.map.stats['water']),anchor=NW)
-        canvas.create_text(790,170,text="Jobs = %d"%(data.map.stats['jobs']),anchor=NW)
+        if data.gameState == 'play': 
+            canvas.create_text(790,50,text="Budget = %d"%(data.map.stats['budget']),anchor=NW)
+            canvas.create_text(790,70,text="Population = %d"%(data.map.stats['population']),anchor=NW)
+            canvas.create_text(790,90,text="Monthly Expense = %d"%(data.map.stats['monthly expense']),anchor=NW)
+            canvas.create_text(790,150,text="Water Supply = %d"%(data.map.stats['water']),anchor=NW)
+            canvas.create_text(790,170,text="Jobs = %d"%(data.map.stats['jobs']),anchor=NW)        
+        elif data.gameState == 'play2': 
+            canvas.create_text(790,50,text="Budget = %d"%(data.map2.stats['budget']),anchor=NW)
+            canvas.create_text(790,70,text="Population = %d"%(data.map2.stats['population']),anchor=NW)
+            canvas.create_text(790,90,text="Monthly Expense = %d"%(data.map2.stats['monthly expense']),anchor=NW)
+            canvas.create_text(790,150,text="Water Supply = %d"%(data.map2.stats['water']),anchor=NW)
+            canvas.create_text(790,170,text="Jobs = %d"%(data.map2.stats['jobs']),anchor=NW)
 
 
         
@@ -400,14 +457,17 @@ def redrawAll(canvas, data):
             
             
                 # retrieving from snapshot values, assign position for retrieval
-                if data.currentButton == "Budget": pos = 0
-                elif data.currentButton == "Monthly Expense": pos = 1
-                elif data.currentButton == "Population": pos = 2
+                # if data.currentButton == "budget": pos = 0
+                # elif data.currentButton == "monthly Expense": pos = 1
+                # elif data.currentButton == "population": pos = 2
                 
                 # plot graph
                 plotGraphData = []
-                for dataPoint in data.snapshot.values():
-                    plotGraphData += [dataPoint[pos]]
+                if data.gameState == 'play': snapshot = data.map.snapshot
+                elif data.gameState == 'play2': snapshot = data.map2.snapshot
+                for key in snapshot.keys():
+                    dataPoint = snapshot[key][data.currentButton]
+                    plotGraphData += [dataPoint]
                 maxValue = max(plotGraphData)
                 minValue = min(plotGraphData)
                 dataCount = len(plotGraphData)
