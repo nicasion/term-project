@@ -91,8 +91,8 @@ def init(data):
     # stats stored in Map.py: Population Budget MonthlyExpense MonthlyIncome
     
     # object data
-    data.constructionCost = {'imagePower':100,'imageWater':50,'imageTree':20, 'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
-    data.monthlyCost = {'imagePower':10,'imageWater':5,'imageTree':2,'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
+    data.constructionCost = {'imagePower':800,'imageWater':550,'imageTree':100, 'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
+    data.monthlyCost = {'imagePower':100,'imageWater':120,'imageTree':5,'ZoningResidential':0,'ZoningCommercial':0,'ZoningIndustrial':0}
 
     # USER INTERFACE 
     # coordinates (start screen)
@@ -106,7 +106,7 @@ def init(data):
     # non-build -- intermediate button, click to expand menu
     # x1,y1,x2,y2,'button name',5=menu length,6=menu item count,
     # 7='item 1 imagefile',8='item 1 color',9='item 1 text', then repeat
-    data.coordinatesNonBuild = [(10,100,90,120,"zoning",200,3,"ZoningResidential","olivedrab","Residential","imageTree",'lightblue','Commerical',"ZoningIndustrial",'yellow','Industrial')]
+    data.coordinatesNonBuild = [(10,100,90,120,"zoning",200,3,"ZoningResidential","olivedrab","Residential","ZoningCommercial",'lightblue','Commerical',"ZoningIndustrial",'yellow','Industrial')]
     
     # stats -- to show graphs etc
     # data.statsCategory = ['budget','monthly expense','population']
@@ -269,7 +269,7 @@ def keyPressed(event, data):
         print (data.currentButton)
     if event.keysym == 'a':
         print (data.colorGrid)
-    if event.keysym == 'b':
+    if event.keysym == 'b' and data.gameState == 'play':
         # pollution heat map
         for key in data.map.gridContent.keys():
             pollution = data.map.gridContent[key]['pollution']
@@ -277,10 +277,22 @@ def keyPressed(event, data):
             elif 30 <= pollution < 45: data.map.gridContent[key]['temp'] = 'red'
             elif 20 <= pollution < 30: data.map.gridContent[key]['temp'] = 'darkorange'
             elif 10 <= pollution < 20: data.map.gridContent[key]['temp'] = 'yellow'
-            elif 0 <= pollution < 10: data.map.gridContent[key]['temp'] = 'springgreen'
-    if event.keysym == 'c':
+            elif pollution < 10: data.map.gridContent[key]['temp'] = 'springgreen'
+    if event.keysym == 'c' and data.gameState == 'play':
         for key in data.map.gridContent.keys():
             del data.map.gridContent[key]['temp']
+    if event.keysym == 'b' and data.gameState == 'play2':
+        # pollution heat map
+        for key in data.map2.gridContent.keys():
+            pollution = data.map2.gridContent[key]['pollution']
+            if pollution >= 45: data.map2.gridContent[key]['temp'] = 'darkred'
+            elif 30 <= pollution < 45: data.map2.gridContent[key]['temp'] = 'red'
+            elif 20 <= pollution < 30: data.map2.gridContent[key]['temp'] = 'darkorange'
+            elif 10 <= pollution < 20: data.map2.gridContent[key]['temp'] = 'yellow'
+            elif pollution < 10: data.map2.gridContent[key]['temp'] = 'springgreen'
+    if event.keysym == 'c' and data.gameState == 'play2':
+        for key in data.map2.gridContent.keys():
+            del data.map2.gridContent[key]['temp']
     if event.keysym == '2':
         data.gameState = "play2"
         data.imageCurrent = None
@@ -304,13 +316,15 @@ def timerFired(data):
         data.temporaryValue = False
         data.map.statsRefresh()
         data.map2.statsRefresh()
-        if data.timer % 10 == 0: #100
+        if data.timer % 50 == 0: #100
             data.calendar += 1
             # if data.gameState == 'play':
             data.map.desirabilityConstruction()
             data.map.constructionStatus()
             data.map.pollutionSpread()
             data.map.stats['budget'] -= data.map.stats['monthly expense']
+            data.map.stats['budget'] += data.map.stats['monthly income']
+
             data.map.updateSnapshot(data.calendar)
 
             # if data.gameState == 'play2':
@@ -318,6 +332,8 @@ def timerFired(data):
             data.map2.constructionStatus()
             data.map2.pollutionSpread()
             data.map2.stats['budget'] -= data.map2.stats['monthly expense']
+            data.map2.stats['budget'] += data.map2.stats['monthly income']
+
             data.map2.updateSnapshot(data.calendar)
 
 

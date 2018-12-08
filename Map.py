@@ -53,7 +53,7 @@ class Map(object):
                 self.gridContent[(j,i)] = {'content':None,'coordinates':(x1,y1,x2,y2,x3,y3,x4,y4),'color':None,'pollution':0,'population':0}
         
         # requirements
-        self.requirements = {'imageApartment':{'power consumption':100,'water consumption':100,'polluting':3,'population':100},'imageStore':{'power consumption':100,'water consumption':100,'polluting':3,'jobs':10,'monthly income':500},'imageIndustry':{'power consumption':200,'water consumption':200,'polluting':30,'jobs':60,'monthly income':500}}
+        self.requirements = {'imageApartment':{'power consumption':100,'water consumption':100,'polluting':3,'population':100},'imageStore':{'power consumption':100,'water consumption':100,'polluting':3,'jobs':10,'monthly income':500},'imageIndustry':{'power consumption':200,'water consumption':200,'polluting':30,'jobs':60,'monthly income':500},'imagePower':{'power consumption':-200,'water consumption':0,'polluting':0},'imageWater':{'water consumption':-200,'power consumption':0,'polluting':0},'imageTree':{'water consumption':0,'power consumption':0,'polluting':-5}}
         
         # stats
         self.stats = {'budget': 10000,'monthly expense':0,'monthly income':0, 'population':0,'jobs':0, 'water':0, 'power':0, 'unemployed':0}
@@ -179,6 +179,7 @@ class Map(object):
     def updateStatsConstructionPhase(self,current,key):
         self.gridContent[key]['power'] = 0 - self.requirements[current]['power consumption']
         self.gridContent[key]['water'] = 0 - self.requirements[current]['water consumption']
+        self.gridContent[key]['pollution'] = 0 + self.requirements[current]['polluting']
         
     # desirable city 
     def desirabilityConstruction(self):
@@ -219,6 +220,9 @@ class Map(object):
                     # 3 days for construction to be done
                     current = self.gridContent[key]['constructing'][0]
                     Map.updateStatsConstructionPhase(self,current,key)
+            elif self.gridContent[key]['content'] == "imageWater" or self.gridContent[key]['content'] == "imagePower":
+                current = self.gridContent[key]['content']
+                Map.updateStatsConstructionPhase(self,current,key)
             
 
     # when construction days are reached, show completed house and update values
@@ -244,7 +248,7 @@ class Map(object):
     # refreshes and consolidates stats
     def statsRefresh(self):
         # this!!!!
-        statsRefreshRequired = {'population':0,'jobs':0, 'water':0, 'power':0}
+        statsRefreshRequired = {'population':0,'jobs':0, 'water':0, 'power':0,'monthly income':0}
         for key in self.gridContent.keys():
             currentGrid = self.gridContent[key]
             for statLabel in statsRefreshRequired:
@@ -277,7 +281,13 @@ class Map(object):
             if 'pollution updated' in self.gridContent[key].keys():
                 del self.gridContent[key]['pollution updated']
             if self.gridContent[key]['content'] == 'imageApartment':
+                self.gridContent[key]['pollution'] += 10
+            elif self.gridContent[key]['content'] == 'imageStore':
+                self.gridContent[key]['pollution'] += 5
+            elif self.gridContent[key]['content'] == 'imageIndustry':
                 self.gridContent[key]['pollution'] += 30
+            elif self.gridContent[key]['content'] == 'imageTree':
+                self.gridContent[key]['pollution'] -= 10
             elif self.gridContent[key]['content'] == None:
                 self.gridContent[key]['pollution'] *= 0.7
                 
